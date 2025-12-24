@@ -1,0 +1,41 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+  text-align: center;
+}
+
+header {
+  padding: 60px 20px;
+}
+
+.buttons {
+  margin: 30px;
+}
+
+.btn {
+  display: inline-block;
+  padding: 15px 30px;
+  margin: 10px;
+  background: #3b82f6;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.btn.secondary {
+  background: #22c55e;
+}
+
+.updates {
+  background: #020617;
+  padding: 40px;
+}
+
+footer {
+  padding: 20px;
+  font-size: 14px;
+  opacity: 0.7;
+}
