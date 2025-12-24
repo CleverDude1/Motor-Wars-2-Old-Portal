@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Motor Wars 2 Original</title>
+  <title>Motor Wars 2 | Players</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -11,11 +11,11 @@
 
   <!-- Sidebar -->
   <aside class="sidebar">
-    <h2>Portal</h2>
+    <h2>Motor Wars 2</h2>
 
     <div class="category">
       <h3>Search & Analyze</h3>
-      <button class="side-btn">Players</button>
+      <button class="side-btn active">Players</button>
       <button class="side-btn">Clans</button>
     </div>
 
@@ -31,33 +31,62 @@
   </aside>
 
   <!-- Main Content -->
-  <main class="main-content">
+  <main class="main">
 
-    <header>
-      <h1>Motor Wars 2 Original</h1>
-      <p>An indie game built with passion.</p>
-    </header>
+    <!-- Search bar -->
+    <div class="top-bar">
+      <input type="text" placeholder="Search for a player or clan..." />
+      <button class="search-btn">Search Player</button>
+      <button class="search-btn secondary">Search Clan</button>
+    </div>
 
-    <section class="buttons">
-      <a href="#" class="btn">Download</a>
-      <a href="https://discord.gg/YOURCODE" class="btn secondary">Discord</a>
-    </section>
-
-    <section class="updates">
-      <h2>Latest Update</h2>
-      <ul>
-        <li>✔ Bug fixes</li>
-        <li>✔ Performance improvements</li>
-        <li>✔ New content added</li>
-      </ul>
-    </section>
-
-    <footer>
-      <p>© 2025 Motor Wars Team</p>
-    </footer>
+    <!-- Player Table -->
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th>Level</th>
+            <th>Kills</th>
+            <th>Wins</th>
+            <th>Score</th>
+            <th>Clan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>RoadKing</td>
+            <td>70</td>
+            <td>12,450</td>
+            <td>1,204</td>
+            <td>488,870</td>
+            <td>Vanguard</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>IronGhost</td>
+            <td>68</td>
+            <td>11,230</td>
+            <td>1,055</td>
+            <td>452,300</td>
+            <td>Templar</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>NightRacer</td>
+            <td>66</td>
+            <td>9,880</td>
+            <td>980</td>
+            <td>410,220</td>
+            <td>~GHOSTS~</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
   </main>
-
 </div>
 
 </body>
