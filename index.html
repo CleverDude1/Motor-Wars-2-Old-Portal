@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Motor Wars 2 Original| Players</title>
+  <title>Motor Wars 2 Original | Players</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -54,40 +54,53 @@
             <th>Clan</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td>1</td>
-            <td>RoadKing</td>
-            <td>70</td>
-            <td>12,450</td>
-            <td>1,204</td>
-            <td>488,870</td>
-            <td>Vanguard</td>
-          </tr>
-          <tr>
-            <td>2</td>
-            <td>IronGhost</td>
-            <td>68</td>
-            <td>11,230</td>
-            <td>1,055</td>
-            <td>452,300</td>
-            <td>Templar</td>
-          </tr>
-          <tr>
-            <td>3</td>
-            <td>NightRacer</td>
-            <td>66</td>
-            <td>9,880</td>
-            <td>980</td>
-            <td>410,220</td>
-            <td>~GHOSTS~</td>
-          </tr>
+        <tbody id="playerTableBody">
+          <!-- API data will be inserted here -->
         </tbody>
       </table>
     </div>
 
   </main>
 </div>
+
+<!-- Script to fetch API and populate table -->
+<script>
+  const API_URL = 'https://mainserver.serv00.net/API/players.php'; // Replace with your PHP API URL
+
+  async function loadPlayers() {
+    try {
+      const response = await fetch(API_URL);
+      const players = await response.json();
+
+      const tbody = document.getElementById('playerTableBody');
+      tbody.innerHTML = ''; // Clear existing rows
+
+      players.forEach((player, index) => {
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${player.country || 'N/A'}</td>
+          <td>${player.username}</td>
+          <td>${player.xp}</td>
+          <td>${player.join_date}</td>
+          <td>${player.last_online}</td>
+          <td>${player.clan || '-'}</td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+    } catch (err) {
+      console.error('Error loading players:', err);
+      const tbody = document.getElementById('playerTableBody');
+      tbody.innerHTML = '<tr><td colspan="7">Failed to load player data.</td></tr>';
+    }
+  }
+
+  // Load players when the page is ready
+  window.addEventListener('DOMContentLoaded', loadPlayers);
+</script>
 
 </body>
 </html>
