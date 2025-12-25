@@ -6,8 +6,8 @@ function mapPlayerData(player) {
     country: player.country || 'N/A',
     username: player.nickname || 'Unknown',        // GitHub "Player" column
     xp: player.honor_points || 0,                  // GitHub "Xp" column
-    join_date: player['registration date'] || 'N/A', // GitHub "Join Date"
-    last_online: player['last login'] || 'N/A',      // GitHub "Last Online"
+    join_date: player['registration_date'] || 'N/A', // GitHub "Join Date"
+    last_online: player['last_login'] || 'N/A',      // GitHub "Last Online"
     clan: player.clan || '-'                        // No API field, default to "-"
   };
 }
