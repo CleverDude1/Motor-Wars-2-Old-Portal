@@ -1,4 +1,4 @@
-const API_URL = 'https://YOURDOMAIN.serv00.com/api/players.php';
+const API_URL = 'https://mainserver.serv00.net/API/players.php';
 
 async function loadPlayers() {
   try {
