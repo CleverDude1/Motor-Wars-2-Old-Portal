@@ -73,8 +73,8 @@
       country: player.country || 'N/A',
       username: player.nickname || 'Unknown',             // API "nickname" → table "Player"
       xp: player.honor_points || 0,                      // API "honor_points" → table "Xp"
-      join_date: player['registration date'] || 'N/A',   // API "registration date" → table "Join Date"
-      last_online: player['last login'] || 'N/A',        // API "last login" → table "Last Online"
+      join_date: player['registration_date'] || 'N/A',   // API "registration date" → table "Join Date"
+      last_online: player['last_login'] || 'N/A',        // API "last login" → table "Last Online"
       clan: player.clan || '-'                            // Default for missing clan
     };
   }
