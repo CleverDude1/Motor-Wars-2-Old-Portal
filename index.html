@@ -41,9 +41,12 @@
 
     <!-- Search bar -->
     <div class="top-bar">
-      <input type="text" placeholder="Search for a player or clan..." />
-      <button class="search-btn">Search Player</button>
-      <button class="search-btn secondary">Search Clan</button>
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search for a player..."
+      />
+      <button class="search-btn" id="btnSearchPlayer">Search Player</button>
     </div>
 
     <!-- Player Table -->
@@ -74,6 +77,12 @@
 
   let cachedPlayers = [];
   let showActiveOnly = false;
+  let searchQuery = '';
+
+  const btnAll = document.getElementById('btnAllPlayers');
+  const btnActive = document.getElementById('btnActivePlayers');
+  const searchInput = document.getElementById('searchInput');
+  const searchBtn = document.getElementById('btnSearchPlayer');
 
   function mapPlayerData(player) {
     return {
@@ -113,25 +122,33 @@
   }
 
   function applyFilter() {
-    let playersToShow = cachedPlayers;
+    let players = [...cachedPlayers];
 
     // Active Players filter
     if (showActiveOnly) {
-      playersToShow = cachedPlayers.filter(p =>
+      players = players.filter(p =>
         p.last_login !== null &&
         p.last_login !== undefined &&
         p.last_login !== ''
       );
     }
 
-    // SORT by XP (highest first)
-    playersToShow.sort((a, b) => {
+    // Search filter (starts with)
+    if (searchQuery.length > 0) {
+      const q = searchQuery.toLowerCase();
+      players = players.filter(p =>
+        (p.nickname || '').toLowerCase().startsWith(q)
+      );
+    }
+
+    // Sort by XP (highest first)
+    players.sort((a, b) => {
       const xpA = Number(a.honor_points) || 0;
       const xpB = Number(b.honor_points) || 0;
       return xpB - xpA;
     });
 
-    renderPlayers(playersToShow);
+    renderPlayers(players);
   }
 
   async function loadPlayers() {
@@ -147,13 +164,28 @@
   }
 
   // Button handlers
-  document.getElementById('btnAllPlayers').addEventListener('click', () => {
+  btnAll.addEventListener('click', () => {
     showActiveOnly = false;
+    btnAll.classList.add('active');
+    btnActive.classList.remove('active');
     applyFilter();
   });
 
-  document.getElementById('btnActivePlayers').addEventListener('click', () => {
+  btnActive.addEventListener('click', () => {
     showActiveOnly = true;
+    btnActive.classList.add('active');
+    btnAll.classList.remove('active');
+    applyFilter();
+  });
+
+  // Search handlers
+  searchBtn.addEventListener('click', () => {
+    searchQuery = searchInput.value.trim();
+    applyFilter();
+  });
+
+  searchInput.addEventListener('input', () => {
+    searchQuery = searchInput.value.trim();
     applyFilter();
   });
 
