@@ -15,9 +15,12 @@
 
     <div class="category">
       <h3>Search & Analyze</h3>
-      <button class="side-btn active">Players</button>
-      <!-- ✅ ADDED Active Players (Players button unchanged) -->
-      <button class="side-btn sub">Active Players</button>
+      <!-- DO NOT CHANGE -->
+      <button class="side-btn active" id="btnAllPlayers">Players</button>
+
+      <!-- ✅ ADDED -->
+      <button class="side-btn sub" id="btnActivePlayers">Active Players</button>
+
       <button class="side-btn">Clans</button>
     </div>
 
@@ -68,62 +71,84 @@
 <script>
   const API_URL = 'https://mainserver.serv00.net/API/players.php';
 
-  // Mapping API fields to frontend table columns
+  let cachedPlayers = [];
+  let showActiveOnly = false;
+
   function mapPlayerData(player) {
     return {
       country: player.country || 'N/A',
       username: player.nickname || 'Unknown',
       xp: player.honor_points || 0,
       join_date: player.registration_date || 'N/A',
-      last_online: player.last_login,
+      last_online: player.last_login || 'N/A',
       clan: player.clan || '-'
     };
   }
 
-  async function loadPlayers() {
+  function renderPlayers(players) {
     const tbody = document.getElementById('playerTableBody');
+    tbody.innerHTML = '';
 
+    if (players.length === 0) {
+      tbody.innerHTML =
+        '<tr><td colspan="7">No players found.</td></tr>';
+      return;
+    }
+
+    players.forEach((playerRaw, index) => {
+      const player = mapPlayerData(playerRaw);
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${player.country}</td>
+        <td>${player.username}</td>
+        <td>${player.xp}</td>
+        <td>${player.join_date}</td>
+        <td>${player.last_online}</td>
+        <td>${player.clan}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function loadPlayers() {
     try {
       const response = await fetch(API_URL);
-      const playersRaw = await response.json();
+      cachedPlayers = await response.json();
+      applyFilter();
+    } catch (err) {
+      console.error(err);
+      document.getElementById('playerTableBody').innerHTML =
+        '<tr><td colspan="7">Failed to load player data.</td></tr>';
+    }
+  }
 
-      tbody.innerHTML = '';
+  function applyFilter() {
+    let playersToShow = cachedPlayers;
 
-      // ✅ ONLY players with NON-NULL last_login
-      const activePlayers = playersRaw.filter(p =>
+    // ✅ Active Players filter ONLY
+    if (showActiveOnly) {
+      playersToShow = cachedPlayers.filter(p =>
         p.last_login !== null &&
         p.last_login !== undefined &&
         p.last_login !== ''
       );
-
-      if (activePlayers.length === 0) {
-        tbody.innerHTML =
-          '<tr><td colspan="7">No active players found.</td></tr>';
-        return;
-      }
-
-      activePlayers.forEach((playerRaw, index) => {
-        const player = mapPlayerData(playerRaw);
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${index + 1}</td>
-          <td>${player.country}</td>
-          <td>${player.username}</td>
-          <td>${player.xp}</td>
-          <td>${player.join_date}</td>
-          <td>${player.last_online}</td>
-          <td>${player.clan}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-    } catch (err) {
-      console.error('Error loading players:', err);
-      tbody.innerHTML =
-        '<tr><td colspan="7">Failed to load player data.</td></tr>';
     }
+
+    renderPlayers(playersToShow);
   }
+
+  // Button handlers
+  document.getElementById('btnAllPlayers').addEventListener('click', () => {
+    showActiveOnly = false;
+    applyFilter();
+  });
+
+  document.getElementById('btnActivePlayers').addEventListener('click', () => {
+    showActiveOnly = true;
+    applyFilter();
+  });
 
   window.addEventListener('DOMContentLoaded', loadPlayers);
 </script>
