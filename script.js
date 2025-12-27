@@ -4,21 +4,28 @@ const API_URL = 'https://mainserver.serv00.net/API/players.php';
 function mapPlayerData(player) {
   return {
     country: player.country || 'N/A',
-    username: player.nickname || 'Unknown',        // GitHub "Player" column
-    xp: player.honor_points || 0,                  // GitHub "Xp" column
-    join_date: player['registration_date'] || 'N/A', // GitHub "Join Date"
-    last_online: player['last_login'] || 'N/A',      // GitHub "Last Online"
-    clan: player.clan || '-'                        // No API field, default to "-"
+    username: player.nickname || 'Unknown',           // Player
+    xp: Number(player.honor_points) || 0,             // XP / Honor Points
+    join_date: player.registration_date || 'N/A',     // Join Date
+    last_online: player.last_login || 'N/A',           // Last Online
+    clan: player.clan || '-'                           // Clan
   };
 }
 
 async function loadPlayers() {
   try {
     const response = await fetch(API_URL);
-    const playersRaw = await response.json();
+    let playersRaw = await response.json();
+
+    // 🔥 SORT BY XP (HIGHEST FIRST)
+    playersRaw.sort((a, b) => {
+      const xpA = Number(a.honor_points) || 0;
+      const xpB = Number(b.honor_points) || 0;
+      return xpB - xpA;
+    });
 
     const tbody = document.getElementById('playerTableBody');
-    tbody.innerHTML = ''; // Clear existing rows
+    tbody.innerHTML = '';
 
     playersRaw.forEach((playerRaw, index) => {
       const player = mapPlayerData(playerRaw);
@@ -38,8 +45,8 @@ async function loadPlayers() {
 
   } catch (err) {
     console.error('Error loading players:', err);
-    const tbody = document.getElementById('playerTableBody');
-    tbody.innerHTML = '<tr><td colspan="7">Failed to load player data.</td></tr>';
+    document.getElementById('playerTableBody').innerHTML =
+      '<tr><td colspan="7">Failed to load player data.</td></tr>';
   }
 }
 
