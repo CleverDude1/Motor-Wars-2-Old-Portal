@@ -84,9 +84,20 @@
   const searchInput = document.getElementById('searchInput');
   const searchBtn = document.getElementById('btnSearchPlayer');
 
+  // Convert country code (US) to flag emoji 🇺🇸
+  function countryCodeToFlagEmoji(code) {
+    if (!code) return '';
+    return code
+      .toUpperCase()
+      .split('')
+      .map(c => String.fromCodePoint(127397 + c.charCodeAt()))
+      .join('');
+  }
+
   function mapPlayerData(player) {
     return {
       country: player.country || 'N/A',
+      countryFlag: player.country ? countryCodeToFlagEmoji(player.country) : '🏳️',
       username: player.nickname || 'Unknown',
       xp: Number(player.honor_points) || 0,
       join_date: player.registration_date || 'N/A',
@@ -110,7 +121,7 @@
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${index + 1}</td>
-        <td>${player.country}</td>
+        <td>${player.countryFlag}</td>
         <td>${player.username}</td>
         <td>${player.xp}</td>
         <td>${player.join_date}</td>
