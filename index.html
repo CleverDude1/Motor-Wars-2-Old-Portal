@@ -6,6 +6,56 @@
   <link rel="stylesheet" href="style.css" />
   <style>
     th { cursor: pointer; }
+
+    /* Player modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.8);
+      color: #e5e7eb;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    .modal-content {
+      background: linear-gradient(#14240e, #0f1f0b);
+      margin: 10% auto;
+      padding: 25px;
+      border-radius: 12px;
+      width: 350px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      position: relative;
+    }
+
+    .close {
+      position: absolute;
+      right: 15px;
+      top: 10px;
+      color: #84cc16;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .modal h3 {
+      margin-top: 0;
+      color: #84cc16;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .modal p {
+      margin: 5px 0;
+    }
+
+    tbody tr {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -36,7 +86,6 @@
     <div class="category">
       <h3>Analytics</h3>
       <button class="side-btn">Statistics</button>
-      <!-- New XP Calculator Button -->
       <button class="side-btn" id="btnXpCalculator" onclick="window.location.href='xp_calculator.html'">XP Calculator</button>
     </div>
   </aside>
@@ -77,6 +126,22 @@
   </main>
 </div>
 
+<!-- Player Info Modal -->
+<div id="playerModal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="modalClose">&times;</span>
+    <h3 id="modalNickname">Player Info</h3>
+    <p><strong>ID:</strong> <span id="modalId"></span></p>
+    <p><strong>Nickname:</strong> <span id="modalNick"></span></p>
+    <p><strong>Country:</strong> <span id="modalCountry"></span></p>
+    <p><strong>Level:</strong> <span id="modalLevel"></span></p>
+    <p><strong>XP (Honor Points):</strong> <span id="modalXp"></span></p>
+    <p><strong>Registration Date:</strong> <span id="modalReg"></span></p>
+    <p><strong>Last Login:</strong> <span id="modalLastLogin"></span></p>
+    <p><strong>Last Online:</strong> <span id="modalLastOnline"></span></p>
+  </div>
+</div>
+
 <script>
   const API_URL = 'https://mainserver.serv00.net/API/players.php';
 
@@ -92,9 +157,29 @@
   const searchBtn = document.getElementById('btnSearchPlayer');
   const headers = document.querySelectorAll('th[data-sort]');
 
+  const modal = document.getElementById('playerModal');
+  const modalClose = document.getElementById('modalClose');
+  const modalId = document.getElementById('modalId');
+  const modalNick = document.getElementById('modalNick');
+  const modalNickname = document.getElementById('modalNickname');
+  const modalCountry = document.getElementById('modalCountry');
+  const modalLevel = document.getElementById('modalLevel');
+  const modalXp = document.getElementById('modalXp');
+  const modalReg = document.getElementById('modalReg');
+  const modalLastLogin = document.getElementById('modalLastLogin');
+  const modalLastOnline = document.getElementById('modalLastOnline');
+
+  function xpToLevel(xp) {
+    if (xp < 0) xp = 0;
+    const minLevel = 1;
+    const level = Math.floor(Math.sqrt(xp / 2500));
+    return level < minLevel ? minLevel : level;
+  }
+
   function mapPlayerData(player) {
     return {
-      index: 0, // placeholder, will use array index
+      index: 0,
+      id: player.id,
       country: player.country || 'N/A',
       username: player.nickname || 'Unknown',
       xp: Number(player.honor_points) || 0,
@@ -127,73 +212,70 @@
         <td>${player.last_online}</td>
         <td>${player.clan}</td>
       `;
+      tr.addEventListener('click', () => showPlayerModal(player));
       tbody.appendChild(tr);
     });
   }
 
+  function showPlayerModal(player) {
+    modalId.textContent = player.id;
+    modalNick.textContent = player.username;
+    modalNickname.textContent = player.username;
+    modalCountry.textContent = player.country;
+    modalLevel.textContent = xpToLevel(player.xp);
+    modalXp.textContent = player.xp;
+    modalReg.textContent = player.join_date;
+    modalLastLogin.textContent = player.last_online;
+
+    // Calculate last online duration
+    if (player.last_online !== 'N/A') {
+      const lastLoginDate = new Date(player.last_online);
+      const now = new Date();
+      const diffMs = now - lastLoginDate;
+      const diffDays = Math.floor(diffMs / (1000*60*60*24));
+      modalLastOnline.textContent = `${diffDays} day(s) ago`;
+    } else {
+      modalLastOnline.textContent = 'N/A';
+    }
+
+    modal.style.display = 'block';
+  }
+
+  modalClose.addEventListener('click', () => modal.style.display = 'none');
+  window.addEventListener('click', e => {
+    if (e.target === modal) modal.style.display = 'none';
+  });
+
   function applyFilter() {
     let players = [...cachedPlayers];
 
-    // Active Players filter (last 30 days)
     if (showActiveOnly) {
       const now = new Date();
-      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
+      const thirtyDaysAgo = new Date(now.getTime() - 30*24*60*60*1000);
       players = players.filter(p => {
         if (!p.last_login) return false;
-        const lastLoginDate = new Date(p.last_login);
-        return lastLoginDate >= thirtyDaysAgo;
+        return new Date(p.last_login) >= thirtyDaysAgo;
       });
     }
 
-    // Search filter (starts with)
     if (searchQuery.length > 0) {
       const q = searchQuery.toLowerCase();
-      players = players.filter(p =>
-        (p.nickname || '').toLowerCase().startsWith(q)
-      );
+      players = players.filter(p => (p.nickname || '').toLowerCase().startsWith(q));
     }
 
-    // Sort
-    players.sort((a, b) => {
+    players.sort((a,b) => {
       let valA, valB;
-
-      switch (sortField) {
-        case 'index':
-          valA = cachedPlayers.indexOf(a);
-          valB = cachedPlayers.indexOf(b);
-          break;
-        case 'country':
-          valA = a.country || '';
-          valB = b.country || '';
-          break;
-        case 'username':
-          valA = a.nickname || '';
-          valB = b.nickname || '';
-          break;
-        case 'xp':
-          valA = Number(a.honor_points) || 0;
-          valB = Number(b.honor_points) || 0;
-          break;
-        case 'join_date':
-          valA = new Date(a.registration_date || 0);
-          valB = new Date(b.registration_date || 0);
-          break;
-        case 'last_online':
-          valA = new Date(a.last_login || 0);
-          valB = new Date(b.last_login || 0);
-          break;
-        case 'clan':
-          valA = a.clan || '';
-          valB = b.clan || '';
-          break;
-        default:
-          valA = 0; valB = 0;
+      switch(sortField){
+        case 'index': valA = cachedPlayers.indexOf(a); valB = cachedPlayers.indexOf(b); break;
+        case 'country': valA = a.country || ''; valB = b.country || ''; break;
+        case 'username': valA = a.nickname || ''; valB = b.nickname || ''; break;
+        case 'xp': valA = Number(a.honor_points) || 0; valB = Number(b.honor_points) || 0; break;
+        case 'join_date': valA = new Date(a.registration_date || 0); valB = new Date(b.registration_date || 0); break;
+        case 'last_online': valA = new Date(a.last_login || 0); valB = new Date(b.last_login || 0); break;
+        case 'clan': valA = a.clan || ''; valB = b.clan || ''; break;
+        default: valA=0; valB=0;
       }
-
-      if (valA < valB) return sortAsc ? -1 : 1;
-      if (valA > valB) return sortAsc ? 1 : -1;
-      return 0;
+      return valA < valB ? (sortAsc? -1:1) : valA > valB ? (sortAsc?1:-1) : 0;
     });
 
     renderPlayers(players);
@@ -204,52 +286,36 @@
       const response = await fetch(API_URL);
       cachedPlayers = await response.json();
       applyFilter();
-    } catch (err) {
+    } catch(err) {
       console.error(err);
-      document.getElementById('playerTableBody').innerHTML =
-        '<tr><td colspan="7">Failed to load player data.</td></tr>';
+      document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="7">Failed to load player data.</td></tr>';
     }
   }
 
-  // Header click sorting
   headers.forEach(th => {
     th.addEventListener('click', () => {
       const field = th.getAttribute('data-sort');
-      if (sortField === field) {
-        sortAsc = !sortAsc; // toggle
-      } else {
-        sortField = field;
-        sortAsc = true;
-      }
+      if(sortField===field){ sortAsc = !sortAsc; } else { sortField=field; sortAsc=true; }
       applyFilter();
     });
   });
 
-  // Button handlers
   btnAll.addEventListener('click', () => {
-    showActiveOnly = false;
+    showActiveOnly=false;
     btnAll.classList.add('active');
     btnActive.classList.remove('active');
     applyFilter();
   });
 
   btnActive.addEventListener('click', () => {
-    showActiveOnly = true;
+    showActiveOnly=true;
     btnActive.classList.add('active');
     btnAll.classList.remove('active');
     applyFilter();
   });
 
-  // Search handlers
-  searchBtn.addEventListener('click', () => {
-    searchQuery = searchInput.value.trim();
-    applyFilter();
-  });
-
-  searchInput.addEventListener('input', () => {
-    searchQuery = searchInput.value.trim();
-    applyFilter();
-  });
+  searchBtn.addEventListener('click', () => { searchQuery=searchInput.value.trim(); applyFilter(); });
+  searchInput.addEventListener('input', () => { searchQuery=searchInput.value.trim(); applyFilter(); });
 
   window.addEventListener('DOMContentLoaded', loadPlayers);
 </script>
