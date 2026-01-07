@@ -124,13 +124,16 @@
   function applyFilter() {
     let players = [...cachedPlayers];
 
-    // Active Players filter
+    // Active Players filter (last 30 days)
     if (showActiveOnly) {
-      players = players.filter(p =>
-        p.last_login !== null &&
-        p.last_login !== undefined &&
-        p.last_login !== ''
-      );
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      players = players.filter(p => {
+        if (!p.last_login) return false;
+        const lastLoginDate = new Date(p.last_login);
+        return lastLoginDate >= thirtyDaysAgo;
+      });
     }
 
     // Search filter (starts with)
