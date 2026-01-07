@@ -90,18 +90,10 @@
   const searchBtn = document.getElementById('btnSearchPlayer');
   const headers = document.querySelectorAll('th[data-sort]');
 
-  // Convert country code to flag emoji
-  const countryFlags = {
-    'US': '🇺🇸','GB': '🇬🇧','FR': '🇫🇷','DE': '🇩🇪','JP': '🇯🇵','CN': '🇨🇳',
-    'RU': '🇷🇺','IN': '🇮🇳','CA': '🇨🇦','BR': '🇧🇷','KR': '🇰🇷','IT': '🇮🇹'
-    // Add more as needed
-  };
-
   function mapPlayerData(player) {
     return {
       index: 0, // placeholder, will use array index
       country: player.country || 'N/A',
-      countryFlag: countryFlags[player.country] || '🏳️',
       username: player.nickname || 'Unknown',
       xp: Number(player.honor_points) || 0,
       join_date: player.registration_date || 'N/A',
@@ -126,7 +118,7 @@
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${player.index}</td>
-        <td>${player.countryFlag}</td>
+        <td>${player.country}</td>
         <td>${player.username}</td>
         <td>${player.xp}</td>
         <td>${player.join_date}</td>
@@ -170,8 +162,8 @@
           valB = cachedPlayers.indexOf(b);
           break;
         case 'country':
-          valA = countryFlags[a.country] || a.country;
-          valB = countryFlags[b.country] || b.country;
+          valA = a.country || '';
+          valB = b.country || '';
           break;
         case 'username':
           valA = a.nickname || '';
