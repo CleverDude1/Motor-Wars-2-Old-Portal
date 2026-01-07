@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <title>Motor Wars 2 Original | Players</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    th { cursor: pointer; }
+  </style>
 </head>
 <body>
 
@@ -54,13 +57,13 @@
       <table>
         <thead>
           <tr>
-            <th>#</th>
-            <th>Country</th>
-            <th>Player</th>
-            <th>Xp</th>
-            <th>Join Date</th>
-            <th>Last Online</th>
-            <th>Clan</th>
+            <th data-sort="index">#</th>
+            <th data-sort="country">Country</th>
+            <th data-sort="username">Player</th>
+            <th data-sort="xp">Xp</th>
+            <th data-sort="join_date">Join Date</th>
+            <th data-sort="last_online">Last Online</th>
+            <th data-sort="clan">Clan</th>
           </tr>
         </thead>
         <tbody id="playerTableBody">
@@ -78,26 +81,27 @@
   let cachedPlayers = [];
   let showActiveOnly = false;
   let searchQuery = '';
+  let sortField = 'index';
+  let sortAsc = true;
 
   const btnAll = document.getElementById('btnAllPlayers');
   const btnActive = document.getElementById('btnActivePlayers');
   const searchInput = document.getElementById('searchInput');
   const searchBtn = document.getElementById('btnSearchPlayer');
+  const headers = document.querySelectorAll('th[data-sort]');
 
-  // Convert country code (US) to flag emoji 🇺🇸
-  function countryCodeToFlagEmoji(code) {
-    if (!code) return '';
-    return code
-      .toUpperCase()
-      .split('')
-      .map(c => String.fromCodePoint(127397 + c.charCodeAt()))
-      .join('');
-  }
+  // Convert country code to flag emoji
+  const countryFlags = {
+    'US': '🇺🇸','GB': '🇬🇧','FR': '🇫🇷','DE': '🇩🇪','JP': '🇯🇵','CN': '🇨🇳',
+    'RU': '🇷🇺','IN': '🇮🇳','CA': '🇨🇦','BR': '🇧🇷','KR': '🇰🇷','IT': '🇮🇹'
+    // Add more as needed
+  };
 
   function mapPlayerData(player) {
     return {
+      index: 0, // placeholder, will use array index
       country: player.country || 'N/A',
-      countryFlag: player.country ? countryCodeToFlagEmoji(player.country) : '🏳️',
+      countryFlag: countryFlags[player.country] || '🏳️',
       username: player.nickname || 'Unknown',
       xp: Number(player.honor_points) || 0,
       join_date: player.registration_date || 'N/A',
@@ -117,10 +121,11 @@
 
     players.forEach((playerRaw, index) => {
       const player = mapPlayerData(playerRaw);
+      player.index = index + 1;
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${index + 1}</td>
+        <td>${player.index}</td>
         <td>${player.countryFlag}</td>
         <td>${player.username}</td>
         <td>${player.xp}</td>
@@ -155,11 +160,46 @@
       );
     }
 
-    // Sort by XP (highest first)
+    // Sort
     players.sort((a, b) => {
-      const xpA = Number(a.honor_points) || 0;
-      const xpB = Number(b.honor_points) || 0;
-      return xpB - xpA;
+      let valA, valB;
+
+      switch (sortField) {
+        case 'index':
+          valA = cachedPlayers.indexOf(a);
+          valB = cachedPlayers.indexOf(b);
+          break;
+        case 'country':
+          valA = countryFlags[a.country] || a.country;
+          valB = countryFlags[b.country] || b.country;
+          break;
+        case 'username':
+          valA = a.nickname || '';
+          valB = b.nickname || '';
+          break;
+        case 'xp':
+          valA = Number(a.honor_points) || 0;
+          valB = Number(b.honor_points) || 0;
+          break;
+        case 'join_date':
+          valA = new Date(a.registration_date || 0);
+          valB = new Date(b.registration_date || 0);
+          break;
+        case 'last_online':
+          valA = new Date(a.last_login || 0);
+          valB = new Date(b.last_login || 0);
+          break;
+        case 'clan':
+          valA = a.clan || '';
+          valB = b.clan || '';
+          break;
+        default:
+          valA = 0; valB = 0;
+      }
+
+      if (valA < valB) return sortAsc ? -1 : 1;
+      if (valA > valB) return sortAsc ? 1 : -1;
+      return 0;
     });
 
     renderPlayers(players);
@@ -176,6 +216,20 @@
         '<tr><td colspan="7">Failed to load player data.</td></tr>';
     }
   }
+
+  // Header click sorting
+  headers.forEach(th => {
+    th.addEventListener('click', () => {
+      const field = th.getAttribute('data-sort');
+      if (sortField === field) {
+        sortAsc = !sortAsc; // toggle
+      } else {
+        sortField = field;
+        sortAsc = true;
+      }
+      applyFilter();
+    });
+  });
 
   // Button handlers
   btnAll.addEventListener('click', () => {
