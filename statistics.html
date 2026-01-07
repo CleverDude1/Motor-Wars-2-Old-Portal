@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Motor Wars 2 Original | Statistics</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #e5e7eb;
+      background-color: #0f1f0b;
+      margin: 0;
+    }
+    .container {
+      display: flex;
+    }
+    aside.sidebar {
+      width: 220px;
+      background-color: #14240e;
+      padding: 20px;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+    aside.sidebar h2 {
+      color: #84cc16;
+      margin-top: 0;
+    }
+    .side-btn {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 10px 0;
+      text-align: left;
+      color: #e5e7eb;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .side-btn.active {
+      color: #84cc16;
+      font-weight: bold;
+    }
+    .side-btn a {
+      color: inherit;
+      text-decoration: none;
+    }
+    main.main {
+      flex: 1;
+      padding: 20px;
+    }
+    h1 {
+      color: #84cc16;
+      text-align: center;
+    }
+    .table-wrapper {
+      margin-top: 20px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #2c3e22;
+    }
+    th {
+      cursor: pointer;
+      color: #84cc16;
+    }
+    tbody tr:hover {
+      background-color: #1a2b10;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <aside class="sidebar">
+    <h2>Motor Wars 2 Original</h2>
+
+    <div class="category">
+      <h3>Search & Analyze</h3>
+      <button class="side-btn" onclick="window.location.href='index.html'">Players</button>
+      <button class="side-btn" onclick="window.location.href='index.html#active'">Active Players</button>
+      <button class="side-btn">Clans</button>
+    </div>
+
+    <div class="category">
+      <h3>Scores & Ranking</h3>
+      <button class="side-btn">Nostalgia Night</button>
+    </div>
+
+    <div class="category">
+      <h3>Analytics</h3>
+      <button class="side-btn active">Statistics</button>
+      <button class="side-btn" onclick="window.location.href='xp_calculator.html'">XP Calculator</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <h1>Daily XP Gains</h1>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Daily XP</th>
+          </tr>
+        </thead>
+        <tbody id="xpTableBody">
+          <tr><td colspan="2">Loading daily XP...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script>
+  const API_URL = 'https://mainserver.serv00.net/games/MotorWars2/reports/daily.json';
+  const tbody = document.getElementById('xpTableBody');
+
+  async function loadDailyXP() {
+    try {
+      const response = await fetch(API_URL);
+      const data = await response.json();
+
+      const gains = data.gains;
+      tbody.innerHTML = '';
+
+      if (!gains || Object.keys(gains).length === 0) {
+        tbody.innerHTML = '<tr><td colspan="2">No data available.</td></tr>';
+        return;
+      }
+
+      Object.entries(gains).forEach(([player, xp]) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${player}</td><td>${xp}</td>`;
+        tbody.appendChild(tr);
+      });
+
+    } catch (err) {
+      console.error(err);
+      tbody.innerHTML = '<tr><td colspan="2">Failed to load daily XP data.</td></tr>';
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', loadDailyXP);
+</script>
+</body>
+</html>
