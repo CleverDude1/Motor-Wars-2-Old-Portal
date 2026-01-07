@@ -111,6 +111,7 @@
             <th data-sort="index">#</th>
             <th data-sort="country">Country</th>
             <th data-sort="username">Player</th>
+            <th data-sort="level">Level</th>
             <th data-sort="xp">Xp</th>
             <th data-sort="join_date">Join Date</th>
             <th data-sort="last_online">Last Online</th>
@@ -118,7 +119,7 @@
           </tr>
         </thead>
         <tbody id="playerTableBody">
-          <tr><td colspan="7">Loading players...</td></tr>
+          <tr><td colspan="8">Loading players...</td></tr>
         </tbody>
       </table>
     </div>
@@ -183,6 +184,7 @@
       country: player.country || 'N/A',
       username: player.nickname || 'Unknown',
       xp: Number(player.honor_points) || 0,
+      level: xpToLevel(Number(player.honor_points) || 0),
       join_date: player.registration_date || 'N/A',
       last_online: player.last_login || 'N/A',
       clan: player.clan || '-'
@@ -194,7 +196,7 @@
     tbody.innerHTML = '';
 
     if (players.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7">No players found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8">No players found.</td></tr>';
       return;
     }
 
@@ -207,6 +209,7 @@
         <td>${player.index}</td>
         <td>${player.country}</td>
         <td>${player.username}</td>
+        <td>${player.level}</td>
         <td>${player.xp}</td>
         <td>${player.join_date}</td>
         <td>${player.last_online}</td>
@@ -222,7 +225,7 @@
     modalNick.textContent = player.username;
     modalNickname.textContent = player.username;
     modalCountry.textContent = player.country;
-    modalLevel.textContent = xpToLevel(player.xp);
+    modalLevel.textContent = player.level;
     modalXp.textContent = player.xp;
     modalReg.textContent = player.join_date;
     modalLastLogin.textContent = player.last_online;
@@ -273,6 +276,7 @@
         case 'join_date': valA = new Date(a.registration_date || 0); valB = new Date(b.registration_date || 0); break;
         case 'last_online': valA = new Date(a.last_login || 0); valB = new Date(b.last_login || 0); break;
         case 'clan': valA = a.clan || ''; valB = b.clan || ''; break;
+        case 'level': valA = xpToLevel(Number(a.honor_points) || 0); valB = xpToLevel(Number(b.honor_points) || 0); break;
         default: valA=0; valB=0;
       }
       return valA < valB ? (sortAsc? -1:1) : valA > valB ? (sortAsc?1:-1) : 0;
@@ -288,7 +292,7 @@
       applyFilter();
     } catch(err) {
       console.error(err);
-      document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="7">Failed to load player data.</td></tr>';
+      document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="8">Failed to load player data.</td></tr>';
     }
   }
 
