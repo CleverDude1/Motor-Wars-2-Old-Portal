@@ -5,43 +5,55 @@
   <title>MW2 XP Calculator</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 2rem;
-      background-color: #f4f4f4;
-    }
+    /* Calculator-specific overrides */
     .calculator {
-      background: #fff;
-      padding: 2rem;
       max-width: 400px;
-      margin: 2rem auto;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      margin: 50px auto;
+      padding: 25px;
+      border-radius: 12px;
+      background: linear-gradient(#14240e, #0f1f0b);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
-    input[type="number"] {
+
+    .calculator h2 {
+      color: #84cc16;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .calculator input[type="number"] {
       width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 1rem;
-      font-size: 1rem;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-    }
-    button {
-      padding: 0.5rem 1rem;
-      font-size: 1rem;
+      padding: 12px;
+      border-radius: 20px;
       border: none;
-      border-radius: 4px;
-      background-color: #007bff;
+      background: #1a2e12;
+      color: #e5e7eb;
+      font-size: 1rem;
+      margin-bottom: 15px;
+    }
+
+    .calculator button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 20px;
+      border: none;
+      background: #65a30d;
       color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    .result {
-      margin-top: 1rem;
       font-weight: bold;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .calculator button:hover {
+      background: #4d7c0f;
+    }
+
+    .calculator .result {
+      margin-top: 15px;
+      text-align: center;
       font-size: 1.2rem;
+      font-weight: bold;
+      color: #84cc16;
     }
   </style>
 </head>
@@ -49,11 +61,8 @@
 
 <div class="calculator">
   <h2>MW2 XP → Level Calculator</h2>
-  <label for="xpInput">Enter XP (honor points):</label>
-  <input type="number" id="xpInput" min="0" placeholder="e.g., 5000" />
-
+  <input type="number" id="xpInput" min="0" placeholder="Enter XP (honor points)" />
   <button id="calculateBtn">Calculate Level</button>
-
   <div class="result" id="result"></div>
 </div>
 
