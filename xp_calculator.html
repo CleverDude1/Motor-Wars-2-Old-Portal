@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>MW2 XP Calculator</title>
+  <title>MW2 XP & Level Calculator</title>
   <link rel="stylesheet" href="style.css" />
   <style>
     /* Calculator-specific overrides */
@@ -29,7 +29,19 @@
       background: #1a2e12;
       color: #e5e7eb;
       font-size: 1rem;
+      margin-bottom: 10px;
+    }
+
+    .calculator select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 20px;
+      border: none;
+      background: #1a2e12;
+      color: #e5e7eb;
+      font-size: 1rem;
       margin-bottom: 15px;
+      cursor: pointer;
     }
 
     .calculator button {
@@ -60,13 +72,21 @@
 <body>
 
 <div class="calculator">
-  <h2>MW2 XP → Level Calculator</h2>
-  <input type="number" id="xpInput" min="0" placeholder="Enter XP (honor points)" />
-  <button id="calculateBtn">Calculate Level</button>
+  <h2>MW2 XP & Level Calculator</h2>
+
+  <select id="modeSelect">
+    <option value="xpToLevel">Convert XP → Level</option>
+    <option value="levelToXp">Convert Level → XP</option>
+  </select>
+
+  <input type="number" id="inputValue" min="0" placeholder="Enter XP or Level" />
+  <button id="calculateBtn">Calculate</button>
+
   <div class="result" id="result"></div>
 </div>
 
 <script>
+  // Convert XP to Level
   function xpToLevel(xp) {
     if (xp < 0) xp = 0;
     const minLevel = 1;
@@ -74,14 +94,31 @@
     return level < minLevel ? minLevel : level;
   }
 
-  const xpInput = document.getElementById('xpInput');
+  // Convert Level to minimum XP needed for that level
+  function levelToXp(level) {
+    if (level < 1) level = 1;
+    return 2500 * (level ** 2);
+  }
+
+  const inputValue = document.getElementById('inputValue');
   const calculateBtn = document.getElementById('calculateBtn');
   const resultDiv = document.getElementById('result');
+  const modeSelect = document.getElementById('modeSelect');
 
   calculateBtn.addEventListener('click', () => {
-    const xp = parseInt(xpInput.value) || 0;
-    const level = xpToLevel(xp);
-    resultDiv.textContent = `Level: ${level}`;
+    const value = parseInt(inputValue.value) || 0;
+    const mode = modeSelect.value;
+    let resultText = '';
+
+    if (mode === 'xpToLevel') {
+      const level = xpToLevel(value);
+      resultText = `Level: ${level}`;
+    } else if (mode === 'levelToXp') {
+      const xp = levelToXp(value);
+      resultText = `Minimum XP: ${xp}`;
+    }
+
+    resultDiv.textContent = resultText;
   });
 </script>
 
