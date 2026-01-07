@@ -104,12 +104,13 @@
       <table>
         <thead>
           <tr>
+            <th>Rank</th>
             <th>Player</th>
             <th>Daily XP</th>
           </tr>
         </thead>
         <tbody id="xpTableBody">
-          <tr><td colspan="2">Loading daily XP...</td></tr>
+          <tr><td colspan="3">Loading daily XP...</td></tr>
         </tbody>
       </table>
     </div>
@@ -129,19 +130,32 @@
       tbody.innerHTML = '';
 
       if (!gains || Object.keys(gains).length === 0) {
-        tbody.innerHTML = '<tr><td colspan="2">No data available.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3">No data available.</td></tr>';
         return;
       }
 
-      Object.entries(gains).forEach(([player, xp]) => {
+      // Convert gains object → array
+      const players = Object.entries(gains).map(([name, xp]) => ({
+        name,
+        xp: Number(xp)
+      }));
+
+      // Sort by XP DESC (highest first)
+      players.sort((a, b) => b.xp - a.xp);
+
+      players.forEach((player, index) => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${player}</td><td>${xp}</td>`;
+        tr.innerHTML = `
+          <td>#${index + 1}</td>
+          <td>${player.name}</td>
+          <td>${player.xp}</td>
+        `;
         tbody.appendChild(tr);
       });
 
     } catch (err) {
       console.error(err);
-      tbody.innerHTML = '<tr><td colspan="2">Failed to load daily XP data.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="3">Failed to load daily XP data.</td></tr>';
     }
   }
 
