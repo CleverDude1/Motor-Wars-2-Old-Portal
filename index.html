@@ -80,7 +80,9 @@
 
     <div class="category">
       <h3>Scores & Ranking</h3>
-      <button class="side-btn">Nostalgia Night</button>
+      <button class="side-btn" id="btnNostalgiaNight" onclick="window.location.href='nostalgia_night.html'">
+        Nostalgia Night
+      </button>
     </div>
 
     <div class="category">
@@ -230,7 +232,6 @@
     modalReg.textContent = player.join_date;
     modalLastLogin.textContent = player.last_online;
 
-    // Calculate last online duration
     if (player.last_online !== 'N/A') {
       const lastLoginDate = new Date(player.last_online);
       const now = new Date();
