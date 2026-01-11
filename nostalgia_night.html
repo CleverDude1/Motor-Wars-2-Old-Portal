@@ -66,13 +66,20 @@
 </table>
 
 <script>
-const API_BASE = 'https://mainserver.serv00.net/games/MotorWars2/archive_ingest/archive_API/index.php?endpoint=session_xp';
+const API_SESSIONS = './archive_API/index.php?endpoint=sessions';
+const API_SESSION_XP = './archive_API/index.php?endpoint=session_player_xp';
 
 // Fetch sessions for the dropdown
 async function loadSessions() {
   try {
-    const res = await fetch(`${API_BASE}?endpoint=sessions`);
+    const res = await fetch(API_SESSIONS);
     const sessions = await res.json();
+
+    if (!Array.isArray(sessions)) {
+      console.error('Sessions API did not return an array', sessions);
+      document.getElementById('sessionSelect').innerHTML = '<option>Error loading sessions</option>';
+      return;
+    }
 
     const select = document.getElementById('sessionSelect');
     select.innerHTML = '';
@@ -103,22 +110,25 @@ async function loadLeaderboard(sessionId) {
   tbody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
 
   try {
-    const res = await fetch(`${API_BASE}?endpoint=session_xp&session_id=${sessionId}`);
+    const res = await fetch(`${API_SESSION_XP}&session_id=${sessionId}`);
     const players = await res.json();
 
-    if(!players.length) {
+    if(!Array.isArray(players) || players.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6">No data for this session</td></tr>';
       return;
     }
 
-    // Sort by xp descending
+    // Sort by XP descending
     players.sort((a,b) => b.xp - a.xp);
 
     tbody.innerHTML = '';
     players.forEach((p, idx) => {
       const tr = document.createElement('tr');
+
+      // Format duration as hh:mm:ss
       const duration = new Date(p.duration_seconds * 1000).toISOString().substr(11, 8);
       const sessionTime = new Date(p.session_timestamp).toLocaleString();
+
       tr.innerHTML = `
         <td class="rank">${idx + 1}</td>
         <td>${p.nickname}</td>
@@ -147,4 +157,3 @@ loadSessions();
 
 </body>
 </html>
-
