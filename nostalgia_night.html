@@ -1,1 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Nostalgia Night | Motor Wars 2</title>
+<style>
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #0f1f0b;
+    color: #e5e7eb;
+    padding: 20px;
+  }
+
+  h1 { color: #84cc16; }
+
+  label { display: block; margin-bottom: 5px; font-weight: bold; }
+  select { padding: 5px 10px; margin-bottom: 20px; font-size: 16px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+
+  th, td {
+    padding: 10px;
+    border: 1px solid #333;
+    text-align: left;
+  }
+
+  th {
+    background-color: #14240e;
+    cursor: pointer;
+  }
+
+  tr:nth-child(even) { background-color: #10180a; }
+
+  tr:hover { background-color: #223311; }
+
+  .rank { font-weight: bold; color: #84cc16; }
+</style>
+</head>
+<body>
+
+<h1>Nostalgia Night Leaderboard</h1>
+
+<label for="sessionSelect">Select a session date:</label>
+<select id="sessionSelect">
+  <option value="">Loading sessions...</option>
+</select>
+
+<table id="leaderboard">
+  <thead>
+    <tr>
+      <th>Rank</th>
+      <th>Player</th>
+      <th>XP</th>
+      <th>XP2</th>
+      <th>Session Timestamp</th>
+      <th>Duration</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td colspan="6">Select a session above</td></tr>
+  </tbody>
+</table>
+
+<script>
+const API_BASE = 'https://mainserver.serv00.net/games/MotorWars2/archive_ingest/archive_API/index.php?endpoint=session_xp';
+
+// Fetch sessions for the dropdown
+async function loadSessions() {
+  try {
+    const res = await fetch(`${API_BASE}?endpoint=sessions`);
+    const sessions = await res.json();
+
+    const select = document.getElementById('sessionSelect');
+    select.innerHTML = '';
+
+    // Sort sessions by timestamp descending
+    sessions.sort((a,b) => new Date(b.session_timestamp) - new Date(a.session_timestamp));
+
+    sessions.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.session_id;
+      const date = new Date(s.session_timestamp);
+      opt.textContent = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+      select.appendChild(opt);
+    });
+
+    // Trigger leaderboard for the first session
+    if(sessions.length > 0) select.dispatchEvent(new Event('change'));
+
+  } catch(err) {
+    console.error(err);
+    document.getElementById('sessionSelect').innerHTML = '<option>Error loading sessions</option>';
+  }
+}
+
+// Load leaderboard for a session
+async function loadLeaderboard(sessionId) {
+  const tbody = document.querySelector('#leaderboard tbody');
+  tbody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
+
+  try {
+    const res = await fetch(`${API_BASE}?endpoint=session_xp&session_id=${sessionId}`);
+    const players = await res.json();
+
+    if(!players.length) {
+      tbody.innerHTML = '<tr><td colspan="6">No data for this session</td></tr>';
+      return;
+    }
+
+    // Sort by xp descending
+    players.sort((a,b) => b.xp - a.xp);
+
+    tbody.innerHTML = '';
+    players.forEach((p, idx) => {
+      const tr = document.createElement('tr');
+      const duration = new Date(p.duration_seconds * 1000).toISOString().substr(11, 8);
+      const sessionTime = new Date(p.session_timestamp).toLocaleString();
+      tr.innerHTML = `
+        <td class="rank">${idx + 1}</td>
+        <td>${p.nickname}</td>
+        <td>${p.xp}</td>
+        <td>${p.xp2}</td>
+        <td>${sessionTime}</td>
+        <td>${duration}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  } catch(err) {
+    console.error(err);
+    tbody.innerHTML = '<tr><td colspan="6">Failed to load leaderboard</td></tr>';
+  }
+}
+
+document.getElementById('sessionSelect').addEventListener('change', (e) => {
+  const sessionId = e.target.value;
+  if(sessionId) loadLeaderboard(sessionId);
+});
+
+// Initialize
+loadSessions();
+</script>
+
+</body>
+</html>
 
