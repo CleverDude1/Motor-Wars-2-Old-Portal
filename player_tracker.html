@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Player Tracker for MW2NEW</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: #000;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+h1 {
+  margin-top: 40px;
+  font-size: 36px;
+  color: #1e90ff;
+  text-align: center;
+  text-shadow: 2px 2px 8px black;
+}
+
+#back-button {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: transparent;
+  border: none;
+  color: #1e90ff;
+  font-size: 42px; /* Increased size */
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+#back-button:hover {
+  color: orange;
+}
+
+#table-container {
+  margin-top: 30px;
+  width: 80%;
+  max-width: 1000px;
+  max-height: 600px;
+  overflow-y: auto;
+  border: 1px solid #555;
+  border-radius: 8px;
+}
+
+#player-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#player-table th, #player-table td {
+  padding: 12px 20px;
+  border-bottom: 1px solid #555;
+  text-align: left;
+}
+
+#player-table th {
+  background-color: #1e90ff;
+  color: white;
+  font-size: 18px;
+  position: sticky;
+  top: 0;
+}
+
+#player-table td {
+  background-color: rgba(34, 34, 34, 0.85);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#player-table td:hover {
+  background-color: orange;
+  color: black;
+}
+
+/* Red stripe on the left for rows with "special" */
+.has-special {
+  border-left: 6px solid red;
+}
+
+#popup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(20, 20, 20, 0.95);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px #1e90ff;
+  max-height: 80%;
+  overflow-y: auto;
+  width: 80%;
+  max-width: 700px;
+  z-index: 100;
+}
+
+#popup h2 {
+  margin-top: 0;
+  color: #1e90ff;
+  text-align: center;
+}
+
+.close-btn {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-size: 22px;
+  font-weight: bold;
+  background: transparent;
+  border: none;
+  color: #1e90ff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+  color: orange;
+}
+
+.screenshot-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 0;
+  border-bottom: 1px solid #444;
+}
+
+.screenshot-entry img {
+  max-width: 100%;
+  border-radius: 6px;
+  border: 1px solid #555;
+}
+</style>
+</head>
+<body>
+
+<!-- Back button -->
+<button id="back-button" onclick="window.location.href='motor_wars_2_new.html'">⬅</button>
+
+<h1>Player Tracker For MW2NEW</h1>
+<div id="table-container">
+  <table id="player-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div id="popup">
+  <button class="close-btn" onclick="closePopup()">✖</button>
+  <h2 id="popup-name"></h2>
+  <div id="popup-content"></div>
+  <p id="youtube-url"></p>
+</div>
+
+<script>
+const SUPABASE_URL = "https://awphrlwerfqwcclyswld.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3cGhybHdlcmZxd2NjbHlzd2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Mzc3NDUsImV4cCI6MjA3MDQxMzc0NX0.0cuCmmoy3uSdY4s4z-fTHU1E7RBi8vS2FjRKEYqb3xA";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let playerData = [];
+
+async function loadPlayers() {
+  console.log("Loading players from Supabase...");
+
+  const { data, error } = await supabase
+    .from("notion_data_mw2new")
+    .select('"Name","Status",screenshots,"screenshot dates","URL","special"');
+
+  console.log("Supabase raw data:", data);
+  console.log("Supabase error:", error);
+
+  if (!data || data.length === 0) {
+    console.warn("No data returned from Supabase!");
+    return;
+  }
+
+  playerData = data.map(player => ({
+    ...player,
+    screenshots: parseArrayField(player.screenshots),
+    "screenshot dates": parseArrayField(player["screenshot dates"]),
+    special: player.special ? Number(player.special) : null
+  }));
+
+  sortPlayers();
+  renderTable();
+}
+
+function parseArrayField(field) {
+  if (!field) return [];
+  try {
+    const parsed = JSON.parse(field);
+    return Array.isArray(parsed) ? parsed : [field];
+  } catch (e) {
+    return field.split(',').map(s => s.trim());
+  }
+}
+
+function sortPlayers() {
+  playerData.sort((a, b) => {
+    if (a.special !== null && b.special !== null) {
+      return a.special - b.special;
+    }
+    if (a.special !== null) return -1;
+    if (b.special !== null) return 1;
+    return a.Name.localeCompare(b.Name);
+  });
+}
+
+function renderTable() {
+  const tbody = document.querySelector("#player-table tbody");
+  tbody.innerHTML = "";
+
+  playerData.forEach(player => {
+    const tr = document.createElement("tr");
+
+    if (player.special !== null) {
+      tr.classList.add("has-special");
+    }
+
+    const nameTd = document.createElement("td");
+    nameTd.textContent = player.Name;
+    const statusTd = document.createElement("td");
+    statusTd.textContent = player.Status;
+
+    [nameTd, statusTd].forEach(td => {
+      td.addEventListener("click", () => openPopup(player));
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  });
+
+  console.log(`Rendered table with ${playerData.length} rows`);
+}
+
+function openPopup(player) {
+  document.getElementById("popup-name").textContent = player.Name;
+  const contentDiv = document.getElementById("popup-content");
+  contentDiv.innerHTML = "";
+
+  player.screenshots.forEach((url, index) => {
+    const date = player["screenshot dates"][index] || "No date";
+    const div = document.createElement("div");
+    div.className = "screenshot-entry";
+
+    if (url.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i)) {
+      div.innerHTML = `<img src="${url}" alt="Screenshot"><span>${date}</span>`;
+    } else {
+      div.innerHTML = `<a href="${url}" target="_blank" style="color:#1e90ff;">Open Screenshot</a><span>${date}</span>`;
+    }
+
+    contentDiv.appendChild(div);
+  });
+
+  document.getElementById("youtube-url").innerHTML = player.URL ? `<a href="${player.URL}" target="_blank" style="color:#1e90ff;">YouTube Link</a>` : "";
+  document.getElementById("popup").style.display = "block";
+}
+
+function closePopup() {
+  document.getElementById("popup").style.display = "none";
+}
+
+loadPlayers();
+</script>
+</body>
+</html>
