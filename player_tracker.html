@@ -177,7 +177,7 @@ async function loadPlayers() {
 
   const { data, error } = await supabase
     .from("notion_data_mw2new")
-    .select('"Name","Status",screenshots,"screenshot dates","URL","special"');
+    .select('Name, Status, screenshots, screenshot dates, URL, special');
 
   console.log("Supabase raw data:", data);
   console.log("Supabase error:", error);
