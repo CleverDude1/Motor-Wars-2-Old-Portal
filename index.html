@@ -233,6 +233,36 @@
     });
   }
 
+  async function loadPlayers() {
+    try {
+      const response = await fetch('https://martiangames.com/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': 'Bearer a6cc01d0-205e-45cc-8550-d06c9c721e66'
+        },
+        body: 'page=1&limit=1000'
+      });
+
+      const data = await response.json();
+
+      cachedPlayers = data.map(user => ({
+        id: user.current.id,
+        nickname: user.current.nickname,
+        honor_points: user.current.xp,
+        registration_date: user.current.timeJoined,
+        last_login: user.current.lastLogin,
+        country: user.current.country,
+        clan: '-'
+      }));
+
+      applyFilter();
+    } catch(err) {
+      console.error(err);
+      document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="8">Failed to load player data.</td></tr>';
+    }
+  }
+
   function showPlayerModal(player) {
     modalId.textContent = player.id;
     modalNick.textContent = player.username;
@@ -278,34 +308,7 @@
       players = players.filter(p => (p.nickname || '').toLowerCase().startsWith(q));
     }
 
-    players.sort((a,b) => {
-      let valA, valB;
-      switch(sortField){
-        case 'index': valA = cachedPlayers.indexOf(a); valB = cachedPlayers.indexOf(b); break;
-        case 'country': valA = a.country || ''; valB = b.country || ''; break;
-        case 'username': valA = a.nickname || ''; valB = b.nickname || ''; break;
-        case 'xp': valA = Number(a.honor_points) || 0; valB = Number(b.honor_points) || 0; break;
-        case 'join_date': valA = new Date(a.registration_date || 0); valB = new Date(b.registration_date || 0); break;
-        case 'last_online': valA = new Date(a.last_login || 0); valB = new Date(b.last_login || 0); break;
-        case 'clan': valA = a.clan || ''; valB = b.clan || ''; break;
-        case 'level': valA = xpToLevel(Number(a.honor_points) || 0); valB = xpToLevel(Number(b.honor_points) || 0); break;
-        default: valA=0; valB=0;
-      }
-      return valA < valB ? (sortAsc? -1:1) : valA > valB ? (sortAsc?1:-1) : 0;
-    });
-
     renderPlayers(players);
-  }
-
-  async function loadPlayers() {
-    try {
-      const response = await fetch(API_URL);
-      cachedPlayers = await response.json();
-      applyFilter();
-    } catch(err) {
-      console.error(err);
-      document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="8">Failed to load player data.</td></tr>';
-    }
   }
 
   headers.forEach(th => {
