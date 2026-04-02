@@ -31,7 +31,7 @@ h1 {
   background: transparent;
   border: none;
   color: #1e90ff;
-  font-size: 42px; /* Increased size */
+  font-size: 42px;
   cursor: pointer;
   transition: color 0.3s ease;
 }
@@ -80,7 +80,6 @@ h1 {
   color: black;
 }
 
-/* Red stripe on the left for rows with "special" */
 .has-special {
   border-left: 6px solid red;
 }
@@ -118,11 +117,6 @@ h1 {
   border: none;
   color: #1e90ff;
   cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.close-btn:hover {
-  color: orange;
 }
 
 .screenshot-entry {
@@ -142,7 +136,6 @@ h1 {
 </head>
 <body>
 
-<!-- Back button -->
 <button id="back-button" onclick="window.location.href='motor_wars_2_new.html'">⬅</button>
 
 <h1>Player Tracker For MW2NEW</h1>
@@ -167,7 +160,7 @@ h1 {
 
 <script>
 const SUPABASE_URL = "https://awphrlwerfqwcclyswld.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3cGhybHdlcmZxd2NjbHlzd2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Mzc3NDUsImV4cCI6MjA3MDQxMzc0NX0.0cuCmmoy3uSdY4s4z-fTHU1E7RBi8vS2FjRKEYqb3xA";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let playerData = [];
@@ -177,7 +170,7 @@ async function loadPlayers() {
 
   const { data, error } = await supabaseClient
     .from("notion_data_mw2new")
-    .select('Name, Status, screenshots, screenshot dates, URL, special');
+    .select('Name, Status, screenshots, "screenshot dates", URL, special');
 
   console.log("Supabase raw data:", data);
   console.log("Supabase error:", error);
@@ -242,8 +235,6 @@ function renderTable() {
 
     tbody.appendChild(tr);
   });
-
-  console.log(`Rendered table with ${playerData.length} rows`);
 }
 
 function openPopup(player) {
@@ -257,15 +248,17 @@ function openPopup(player) {
     div.className = "screenshot-entry";
 
     if (url.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i)) {
-      div.innerHTML = `<img src="${url}" alt="Screenshot"><span>${date}</span>`;
+      div.innerHTML = `<img src="${url}"><span>${date}</span>`;
     } else {
-      div.innerHTML = `<a href="${url}" target="_blank" style="color:#1e90ff;">Open Screenshot</a><span>${date}</span>`;
+      div.innerHTML = `<a href="${url}" target="_blank">Open Screenshot</a><span>${date}</span>`;
     }
 
     contentDiv.appendChild(div);
   });
 
-  document.getElementById("youtube-url").innerHTML = player.URL ? `<a href="${player.URL}" target="_blank" style="color:#1e90ff;">YouTube Link</a>` : "";
+  document.getElementById("youtube-url").innerHTML =
+    player.URL ? `<a href="${player.URL}" target="_blank">YouTube Link</a>` : "";
+
   document.getElementById("popup").style.display = "block";
 }
 
