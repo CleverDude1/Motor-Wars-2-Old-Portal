@@ -208,7 +208,7 @@ function sortPlayers() {
     }
     if (a.special !== null) return -1;
     if (b.special !== null) return 1;
-    return a.Name.localeCompare(b.Name);
+    return (a.Name || '').localeCompare(b.Name || '');
   });
 }
 
