@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Motor Wars 2 Original | Players</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cleverdude1.github.io/Motor-Wars-2-Old-Portal/players.js"></script> <!-- players.js included -->
   <style>
     th { cursor: pointer; }
 
@@ -77,31 +78,15 @@
     <div class="category">
       <h3>Search & Analyze</h3>
 
-      <!-- DO NOT CHANGE -->
       <button class="side-btn active" id="btnAllPlayers">Players</button>
-
-      <!-- ADDED -->
       <button class="side-btn sub" id="btnActivePlayers">Active Players</button>
-
-      <!-- NEW BUTTON -->
-      <button
-        class="side-btn sub"
-        id="btnPlayerTracker"
-        onclick="window.location.href='player_tracker.html'">
-        Player Tracker
-      </button>
-
+      <button class="side-btn sub" id="btnPlayerTracker" onclick="window.location.href='player_tracker.html'">Player Tracker</button>
       <button class="side-btn">Clans</button>
     </div>
 
     <div class="category">
       <h3>Scores & Ranking</h3>
-      <button
-        class="side-btn"
-        id="btnNostalgiaNight"
-        onclick="window.location.href='nostalgia_night.html'">
-        Nostalgia Night
-      </button>
+      <button class="side-btn" id="btnNostalgiaNight" onclick="window.location.href='nostalgia_night.html'">Nostalgia Night</button>
     </div>
 
     <div class="category">
@@ -116,11 +101,7 @@
 
     <!-- Search bar -->
     <div class="top-bar">
-      <input
-        type="text"
-        id="searchInput"
-        placeholder="Search for a player..."
-      />
+      <input type="text" id="searchInput" placeholder="Search for a player..." />
       <button class="search-btn" id="btnSearchPlayer">Search Player</button>
     </div>
 
@@ -165,13 +146,11 @@
 </div>
 
 <script>
-  const API_URL = 'https://mw2-proxy.vercel.app/api/users'; // Replace with your actual proxy endpoint
-
   let cachedPlayers = [];
   let showActiveOnly = false;
   let searchQuery = '';
   let sortField = 'level';
-  let sortAsc = false; // Descending by default for level
+  let sortAsc = false;
 
   const btnAll = document.getElementById('btnAllPlayers');
   const btnActive = document.getElementById('btnActivePlayers');
@@ -192,22 +171,17 @@
   const modalLastOnline = document.getElementById('modalLastOnline');
 
   function xpToLevel(xp) {
-    if (xp < 0) xp = 0;
-    const minLevel = 1;
-    const level = Math.floor(Math.sqrt(xp / 2500));
-    return level < minLevel ? minLevel : level;
+    return Math.max(1, Math.floor(Math.sqrt(Math.max(0, xp)/2500)));
   }
 
   function mapPlayerData(player) {
     let username = player.nickname || 'Unknown';
     let clan = player.clan || '-';
-
     const clanMatch = username.match(/\(([^)]+)\)/);
     if (clanMatch) {
       clan = clanMatch[1];
       username = username.replace(/\s*\([^)]+\)/, '');
     }
-
     return {
       index: 0,
       id: player.id,
@@ -222,36 +196,34 @@
   }
 
   function renderPlayers(players) {
-    players.sort((a,b) => {
+    players.sort((a,b)=>{
       let valA = a[sortField];
       let valB = b[sortField];
 
-      if(sortField==='join_date' || sortField==='last_online') {
+      if(sortField==='join_date'||sortField==='last_online'){
         valA = valA==='N/A'?0:new Date(valA).getTime();
         valB = valB==='N/A'?0:new Date(valB).getTime();
       }
-
-      if(typeof valA==='string') {
+      if(typeof valA==='string'){
         return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
       }
-
-      return sortAsc ? valA - valB : valB - valA;
+      return sortAsc ? valA-valB : valB-valA;
     });
 
     const tbody = document.getElementById('playerTableBody');
     tbody.innerHTML = '';
 
-    if (players.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8">No players found.</td></tr>';
+    if(players.length===0){
+      tbody.innerHTML='<tr><td colspan="8">No players found.</td></tr>';
       return;
     }
 
-    players.forEach((playerRaw, index) => {
+    players.forEach((playerRaw,index)=>{
       const player = mapPlayerData(playerRaw);
-      player.index = index + 1;
+      player.index=index+1;
 
       const tr = document.createElement('tr');
-      tr.innerHTML = `
+      tr.innerHTML=`
         <td>${player.index}</td>
         <td>${player.country}</td>
         <td>${player.username}</td>
@@ -261,115 +233,92 @@
         <td>${player.last_online}</td>
         <td>${player.clan}</td>
       `;
-      tr.addEventListener('click', () => showPlayerModal(player));
+      tr.addEventListener('click',()=>showPlayerModal(player));
       tbody.appendChild(tr);
     });
   }
 
-  async function loadPlayers() {
-    let page = 1;
-    const perPage = 1000;
-    let allPlayers = [];
-
-    try {
-      while(true){
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: `page=${page}&limit=${perPage}`
-        });
-
-        const data = await response.json();
-        if(!data || data.length===0) break;
-
-        allPlayers = allPlayers.concat(data);
-        page++;
-      }
-
-      cachedPlayers = allPlayers;
-      applyFilter();
-    } catch(err) {
-      console.error(err);
+  function loadPlayers() {
+    if (typeof players === 'undefined') {
+      console.error('players.js not loaded or players array missing');
       document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="8">Failed to load player data.</td></tr>';
+      return;
     }
+    cachedPlayers = players;
+    applyFilter();
   }
 
-  function showPlayerModal(player) {
-    modalId.textContent = player.id;
-    modalNick.textContent = player.username;
-    modalNickname.textContent = player.username;
-    modalCountry.textContent = player.country;
-    modalLevel.textContent = player.level;
-    modalXp.textContent = player.xp;
-    modalReg.textContent = player.join_date;
-    modalLastLogin.textContent = player.last_online;
+  function showPlayerModal(player){
+    modalId.textContent=player.id;
+    modalNick.textContent=player.username;
+    modalNickname.textContent=player.username;
+    modalCountry.textContent=player.country;
+    modalLevel.textContent=player.level;
+    modalXp.textContent=player.xp;
+    modalReg.textContent=player.join_date;
+    modalLastLogin.textContent=player.last_online;
 
-    if (player.last_online !== 'N/A') {
-      const lastLoginDate = new Date(player.last_online);
-      const now = new Date();
-      const diffMs = now - lastLoginDate;
-      const diffDays = Math.floor(diffMs / (1000*60*60*24));
-      modalLastOnline.textContent = `${diffDays} day(s) ago`;
+    if(player.last_online!=='N/A'){
+      const lastLoginDate=new Date(player.last_online);
+      const now=new Date();
+      const diffDays=Math.floor((now-lastLoginDate)/(1000*60*60*24));
+      modalLastOnline.textContent=`${diffDays} day(s) ago`;
     } else {
-      modalLastOnline.textContent = 'N/A';
+      modalLastOnline.textContent='N/A';
     }
-
-    modal.style.display = 'block';
+    modal.style.display='block';
   }
 
-  modalClose.addEventListener('click', () => modal.style.display = 'none');
-  window.addEventListener('click', e => {
-    if (e.target === modal) modal.style.display = 'none';
-  });
+  modalClose.addEventListener('click',()=>modal.style.display='none');
+  window.addEventListener('click',e=>{if(e.target===modal) modal.style.display='none';});
 
-  function applyFilter() {
-    let players = [...cachedPlayers];
+  function applyFilter(){
+    let players=[...cachedPlayers];
 
-    if (showActiveOnly) {
-      const now = new Date();
-      const thirtyDaysAgo = new Date(now.getTime() - 30*24*60*60*1000);
-      players = players.filter(p => {
-        if (!p.last_login) return false;
-        return new Date(p.last_login) >= thirtyDaysAgo;
+    if(showActiveOnly){
+      const now=new Date();
+      const thirtyDaysAgo=new Date(now.getTime()-30*24*60*60*1000);
+      players=players.filter(p=>{
+        if(!p.last_login) return false;
+        return new Date(p.last_login)>=thirtyDaysAgo;
       });
     }
 
-    if (searchQuery.length > 0) {
-      const q = searchQuery.toLowerCase();
-      players = players.filter(p => (p.nickname || '').toLowerCase().startsWith(q));
+    if(searchQuery.length>0){
+      const q=searchQuery.toLowerCase();
+      players=players.filter(p=>(p.nickname||'').toLowerCase().startsWith(q));
     }
 
     renderPlayers(players);
   }
 
-  headers.forEach(th => {
-    th.addEventListener('click', () => {
-      const field = th.getAttribute('data-sort');
-      if(sortField===field){ sortAsc = !sortAsc; } else { sortField=field; sortAsc=true; }
+  headers.forEach(th=>{
+    th.addEventListener('click',()=>{
+      const field=th.getAttribute('data-sort');
+      if(sortField===field) sortAsc=!sortAsc;
+      else { sortField=field; sortAsc=true; }
       applyFilter();
     });
   });
 
-  btnAll.addEventListener('click', () => {
+  btnAll.addEventListener('click',()=>{
     showActiveOnly=false;
     btnAll.classList.add('active');
     btnActive.classList.remove('active');
     applyFilter();
   });
 
-  btnActive.addEventListener('click', () => {
+  btnActive.addEventListener('click',()=>{
     showActiveOnly=true;
     btnActive.classList.add('active');
     btnAll.classList.remove('active');
     applyFilter();
   });
 
-  searchBtn.addEventListener('click', () => { searchQuery=searchInput.value.trim(); applyFilter(); });
-  searchInput.addEventListener('input', () => { searchQuery=searchInput.value.trim(); applyFilter(); });
+  searchBtn.addEventListener('click',()=>{ searchQuery=searchInput.value.trim(); applyFilter(); });
+  searchInput.addEventListener('input',()=>{ searchQuery=searchInput.value.trim(); applyFilter(); });
 
-  window.addEventListener('DOMContentLoaded', loadPlayers);
+  window.addEventListener('DOMContentLoaded',loadPlayers);
 </script>
 
 </body>
