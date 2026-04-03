@@ -76,32 +76,15 @@
 
     <div class="category">
       <h3>Search & Analyze</h3>
-
-      <!-- DO NOT CHANGE -->
       <button class="side-btn active" id="btnAllPlayers">Players</button>
-
-      <!-- ADDED -->
       <button class="side-btn sub" id="btnActivePlayers">Active Players</button>
-
-      <!-- NEW BUTTON -->
-      <button
-        class="side-btn sub"
-        id="btnPlayerTracker"
-        onclick="window.location.href='player_tracker.html'">
-        Player Tracker
-      </button>
-
+      <button class="side-btn sub" id="btnPlayerTracker" onclick="window.location.href='player_tracker.html'">Player Tracker</button>
       <button class="side-btn">Clans</button>
     </div>
 
     <div class="category">
       <h3>Scores & Ranking</h3>
-      <button
-        class="side-btn"
-        id="btnNostalgiaNight"
-        onclick="window.location.href='nostalgia_night.html'">
-        Nostalgia Night
-      </button>
+      <button class="side-btn" id="btnNostalgiaNight" onclick="window.location.href='nostalgia_night.html'">Nostalgia Night</button>
     </div>
 
     <div class="category">
@@ -116,11 +99,7 @@
 
     <!-- Search bar -->
     <div class="top-bar">
-      <input
-        type="text"
-        id="searchInput"
-        placeholder="Search for a player..."
-      />
+      <input type="text" id="searchInput" placeholder="Search for a player..." />
       <button class="search-btn" id="btnSearchPlayer">Search Player</button>
     </div>
 
@@ -165,167 +144,175 @@
 </div>
 
 <script>
-  const API_URL = 'https://raw.githubusercontent.com/CleverDude1/Motor-Wars-2-Old-Portal/refs/heads/main/players.json';
+const API_URL = 'https://raw.githubusercontent.com/CleverDude1/Motor-Wars-2-Old-Portal/refs/heads/main/players.json';
 
-  let cachedPlayers = [];
-  let showActiveOnly = false;
-  let searchQuery = '';
-  let sortField = 'level';
-  let sortAsc = false;
+let cachedPlayers = [];
+let showActiveOnly = false;
+let searchQuery = '';
+let sortField = 'level';
+let sortAsc = false;
 
-  const btnAll = document.getElementById('btnAllPlayers');
-  const btnActive = document.getElementById('btnActivePlayers');
-  const searchInput = document.getElementById('searchInput');
-  const searchBtn = document.getElementById('btnSearchPlayer');
-  const headers = document.querySelectorAll('th[data-sort]');
+const btnAll = document.getElementById('btnAllPlayers');
+const btnActive = document.getElementById('btnActivePlayers');
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('btnSearchPlayer');
+const headers = document.querySelectorAll('th[data-sort]');
 
-  const modal = document.getElementById('playerModal');
-  const modalClose = document.getElementById('modalClose');
-  const modalId = document.getElementById('modalId');
-  const modalNick = document.getElementById('modalNick');
-  const modalNickname = document.getElementById('modalNickname');
-  const modalCountry = document.getElementById('modalCountry');
-  const modalLevel = document.getElementById('modalLevel');
-  const modalXp = document.getElementById('modalXp');
-  const modalReg = document.getElementById('modalReg');
-  const modalLastLogin = document.getElementById('modalLastLogin');
-  const modalLastOnline = document.getElementById('modalLastOnline');
+const modal = document.getElementById('playerModal');
+const modalClose = document.getElementById('modalClose');
+const modalId = document.getElementById('modalId');
+const modalNick = document.getElementById('modalNick');
+const modalNickname = document.getElementById('modalNickname');
+const modalCountry = document.getElementById('modalCountry');
+const modalLevel = document.getElementById('modalLevel');
+const modalXp = document.getElementById('modalXp');
+const modalReg = document.getElementById('modalReg');
+const modalLastLogin = document.getElementById('modalLastLogin');
+const modalLastOnline = document.getElementById('modalLastOnline');
 
-  function xpToLevel(xp) {
-    return Math.max(1, Math.floor(Math.sqrt(Math.max(0, xp)/2500)));
+function xpToLevel(xp) {
+  return Math.max(1, Math.floor(Math.sqrt(Math.max(0, xp)/2500)));
+}
+
+// Map player data for display
+function mapPlayerData(player) {
+  const p = player.current || {};
+
+  let username = p.nickname || 'Unknown';
+  let clan = '-';
+  const match = username.match(/\(([^)]+)\)/);
+  if (match) {
+    clan = match[1];
+    username = username.replace(/\s*\([^)]+\)/, '');
   }
 
-  function mapPlayerData(player) {
-    let username = player.nickname || 'Unknown';
-    let clan = '-';
+  return {
+    index: 0,
+    id: p.id || 'N/A',
+    country: p.country || 'N/A',
+    username,
+    xp: Number(p.xp) || 0,
+    level: xpToLevel(p.xp || 0),
+    join_date: p.timeJoined || 'N/A',
+    last_online: p.lastLogin || 'N/A',
+    clan
+  };
+}
 
-    const match = username.match(/\(([^)]+)\)/);
-    if (match) {
-      clan = match[1];
-      username = username.replace(/\s*\([^)]+\)/, '');
-    }
-
-    return {
-      index: 0,
-      id: player.id,
-      country: player.country || 'N/A',
-      username,
-      xp: Number(player.honor_points) || 0,
-      level: xpToLevel(player.honor_points),
-      join_date: player.registration_date || 'N/A',
-      last_online: player.last_login || 'N/A',
-      clan
-    };
+async function loadPlayers() {
+  try {
+    const response = await fetch(API_URL);
+    const playersData = await response.json();
+    cachedPlayers = playersData;
+    applyFilter();
+  } catch (err) {
+    console.error(err);
+    document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="8">Failed to load player data.</td></tr>';
   }
+}
 
-  async function loadPlayers() {
-    try {
-      const response = await fetch(API_URL);
-      const playersData = await response.json();
-      cachedPlayers = playersData;
-      applyFilter();
-    } catch (err) {
-      console.error(err);
-      document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="8">Failed to load player data.</td></tr>';
-    }
-  }
+function renderPlayers(players) {
+  players = players.map(mapPlayerData);
 
-  function renderPlayers(players) {
-    players = players.map(mapPlayerData);
+  players.sort((a,b)=>{
+    let A = a[sortField];
+    let B = b[sortField];
 
-    players.sort((a,b)=>{
-      let A = a[sortField];
-      let B = b[sortField];
-
-      if(typeof A==='string') {
-        return sortAsc ? A.localeCompare(B) : B.localeCompare(A);
-      }
-      return sortAsc ? A - B : B - A;
-    });
-
-    const tbody = document.getElementById('playerTableBody');
-    tbody.innerHTML = '';
-
-    if (players.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8">No players found.</td></tr>';
-      return;
+    if(sortField==='join_date'||sortField==='last_online'){
+      A = A==='N/A'?0:new Date(A).getTime();
+      B = B==='N/A'?0:new Date(B).getTime();
     }
 
-    players.forEach((p,index) => {
-      p.index = index + 1;
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${p.index}</td>
-        <td>${p.country}</td>
-        <td>${p.username}</td>
-        <td>${p.level}</td>
-        <td>${p.xp}</td>
-        <td>${p.join_date}</td>
-        <td>${p.last_online}</td>
-        <td>${p.clan}</td>
-      `;
-      tr.addEventListener('click', () => showPlayerModal(p));
-      tbody.appendChild(tr);
-    });
-  }
-
-  function showPlayerModal(p) {
-    modalId.textContent = p.id;
-    modalNick.textContent = p.username;
-    modalNickname.textContent = p.username;
-    modalCountry.textContent = p.country;
-    modalLevel.textContent = p.level;
-    modalXp.textContent = p.xp;
-    modalReg.textContent = p.join_date;
-    modalLastLogin.textContent = p.last_online;
-
-    if (p.last_online !== 'N/A') {
-      const lastLoginDate = new Date(p.last_online);
-      const now = new Date();
-      const diffDays = Math.floor((now - lastLoginDate) / (1000*60*60*24));
-      modalLastOnline.textContent = `${diffDays} day(s) ago`;
-    } else {
-      modalLastOnline.textContent = 'N/A';
+    if(typeof A==='string'){
+      return sortAsc ? A.localeCompare(B) : B.localeCompare(A);
     }
-    modal.style.display = 'block';
-  }
-
-  modalClose.addEventListener('click', () => modal.style.display = 'none');
-  window.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
-
-  function applyFilter() {
-    let filtered = [...cachedPlayers];
-
-    if (showActiveOnly) {
-      const now = new Date();
-      const cutoff = new Date(now.getTime() - 30*24*60*60*1000);
-      filtered = filtered.filter(p => p.last_login && new Date(p.last_login) >= cutoff);
-    }
-
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(p => (p.nickname||'').toLowerCase().startsWith(q));
-    }
-
-    renderPlayers(filtered);
-  }
-
-  headers.forEach(th => {
-    th.addEventListener('click', () => {
-      const field = th.getAttribute('data-sort');
-      if (sortField === field) sortAsc = !sortAsc;
-      else { sortField = field; sortAsc = true; }
-      applyFilter();
-    });
+    return sortAsc ? A-B : B-A;
   });
 
-  btnAll.addEventListener('click', () => { showActiveOnly=false; applyFilter(); });
-  btnActive.addEventListener('click', () => { showActiveOnly=true; applyFilter(); });
+  const tbody = document.getElementById('playerTableBody');
+  tbody.innerHTML='';
 
-  searchBtn.addEventListener('click', () => { searchQuery=searchInput.value.trim(); applyFilter(); });
-  searchInput.addEventListener('input', () => { searchQuery=searchInput.value.trim(); applyFilter(); });
+  if(players.length===0){
+    tbody.innerHTML='<tr><td colspan="8">No players found.</td></tr>';
+    return;
+  }
 
-  window.addEventListener('DOMContentLoaded', loadPlayers);
+  players.forEach((p,index)=>{
+    p.index=index+1;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${p.index}</td>
+      <td>${p.country}</td>
+      <td>${p.username}</td>
+      <td>${p.level}</td>
+      <td>${p.xp}</td>
+      <td>${p.join_date}</td>
+      <td>${p.last_online}</td>
+      <td>${p.clan}</td>
+    `;
+    tr.addEventListener('click',()=>showPlayerModal(p));
+    tbody.appendChild(tr);
+  });
+}
+
+function showPlayerModal(p){
+  modalId.textContent=p.id;
+  modalNick.textContent=p.username;
+  modalNickname.textContent=p.username;
+  modalCountry.textContent=p.country;
+  modalLevel.textContent=p.level;
+  modalXp.textContent=p.xp;
+  modalReg.textContent=p.join_date;
+  modalLastLogin.textContent=p.last_online;
+
+  if(p.last_online!=='N/A'){
+    const lastLoginDate=new Date(p.last_online);
+    const now=new Date();
+    const diffDays=Math.floor((now-lastLoginDate)/(1000*60*60*24));
+    modalLastOnline.textContent=`${diffDays} day(s) ago`;
+  } else modalLastOnline.textContent='N/A';
+
+  modal.style.display='block';
+}
+
+modalClose.addEventListener('click',()=>modal.style.display='none');
+window.addEventListener('click',e=>{if(e.target===modal) modal.style.display='none';});
+
+function applyFilter(){
+  let filtered = [...cachedPlayers];
+
+  if(showActiveOnly){
+    const now=new Date();
+    const cutoff=new Date(now.getTime()-30*24*60*60*1000);
+    filtered = filtered.filter(p => {
+      const last = p.current?.lastLogin;
+      return last && new Date(last)>=cutoff;
+    });
+  }
+
+  if(searchQuery){
+    const q=searchQuery.toLowerCase();
+    filtered = filtered.filter(p => (p.current?.nickname||'').toLowerCase().startsWith(q));
+  }
+
+  renderPlayers(filtered);
+}
+
+headers.forEach(th=>{
+  th.addEventListener('click',()=>{
+    const field=th.getAttribute('data-sort');
+    if(sortField===field) sortAsc=!sortAsc;
+    else { sortField=field; sortAsc=true; }
+    applyFilter();
+  });
+});
+
+btnAll.addEventListener('click',()=>{ showActiveOnly=false; applyFilter(); });
+btnActive.addEventListener('click',()=>{ showActiveOnly=true; applyFilter(); });
+searchBtn.addEventListener('click',()=>{ searchQuery=searchInput.value.trim(); applyFilter(); });
+searchInput.addEventListener('input',()=>{ searchQuery=searchInput.value.trim(); applyFilter(); });
+
+window.addEventListener('DOMContentLoaded',loadPlayers);
 </script>
 
 </body>
