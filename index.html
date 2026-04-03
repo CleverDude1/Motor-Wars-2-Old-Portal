@@ -165,7 +165,7 @@
 </div>
 
 <script>
-  const API_URL = 'https://cleverdude1.github.io/Motor-Wars-2-Old-Portal/players.json';
+  const API_URL = 'https://raw.githubusercontent.com/CleverDude1/Motor-Wars-2-Old-Portal/main/players.json';
 
   let cachedPlayers = [];
   let showActiveOnly = false;
@@ -270,29 +270,11 @@
   }
 
   async function loadPlayers() {
-    let page = 1;
-    const perPage = 1000;
-    let allPlayers = [];
-
     try {
-      while(true){
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': 'Bearer a6cc01d0-205e-45cc-8550-d06c9c721e66'
-          },
-          body: `page=${page}&limit=${perPage}`
-        });
+      const response = await fetch(API_URL);
+      const data = await response.json();
 
-        const data = await response.json();
-        if(!data || data.length===0) break;
-
-        allPlayers = allPlayers.concat(data);
-        page++;
-      }
-
-      cachedPlayers = allPlayers;
+      cachedPlayers = data;
       applyFilter();
     } catch(err) {
       console.error(err);
