@@ -7,6 +7,7 @@
   <style>
     th { cursor: pointer; }
 
+    /* Arrows for sorting */
     th[data-sort]::after {
       content: ' ⇅';
       font-size: 0.7em;
@@ -14,6 +15,7 @@
       margin-left: 4px;
     }
 
+    /* Player modal */
     .modal {
       display: none;
       position: fixed;
@@ -22,8 +24,10 @@
       top: 0;
       width: 100%;
       height: 100%;
+      overflow: auto;
       background-color: rgba(0,0,0,0.8);
       color: #e5e7eb;
+      font-family: "Segoe UI", Arial, sans-serif;
     }
 
     .modal-content {
@@ -32,6 +36,7 @@
       padding: 25px;
       border-radius: 12px;
       width: 350px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
       position: relative;
     }
 
@@ -41,249 +46,273 @@
       top: 10px;
       color: #84cc16;
       font-size: 24px;
+      font-weight: bold;
       cursor: pointer;
     }
 
-    tbody tr { cursor: pointer; }
+    .modal h3 {
+      margin-top: 0;
+      color: #84cc16;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .modal p {
+      margin: 5px 0;
+    }
+
+    tbody tr {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
 
 <div class="container">
+
+  <!-- Sidebar -->
   <aside class="sidebar">
     <h2>Motor Wars 2 Original</h2>
 
     <div class="category">
       <h3>Search & Analyze</h3>
-      <button class="side-btn active" id="btnPlayers">Players</button>
+      <button class="side-btn active" id="btnAllPlayers">Players</button>
       <button class="side-btn sub" id="btnActivePlayers">Active Players</button>
-      <button class="side-btn" id="btnClans">Clans</button>
+      <button class="side-btn sub" id="btnPlayerTracker" onclick="window.location.href='player_tracker.html'">Player Tracker</button>
+      <button class="side-btn">Clans</button>
+    </div>
+
+    <div class="category">
+      <h3>Scores & Ranking</h3>
+      <button class="side-btn" id="btnNostalgiaNight" onclick="window.location.href='nostalgia_night.html'">Nostalgia Night</button>
+    </div>
+
+    <div class="category">
+      <h3>Analytics</h3>
+      <button class="side-btn" id="btnStatistics" onclick="window.location.href='statistics.html'">Statistics</button>
+      <button class="side-btn" id="btnXpCalculator" onclick="window.location.href='xp_calculator.html'">XP Calculator</button>
     </div>
   </aside>
 
+  <!-- Main Content -->
   <main class="main">
+
+    <!-- Search bar -->
     <div class="top-bar">
-      <input type="text" id="searchInput" placeholder="Search..." />
-      <button id="btnSearch">Search</button>
+      <input type="text" id="searchInput" placeholder="Search for a player..." />
+      <button class="search-btn" id="btnSearchPlayer">Search Player</button>
     </div>
 
+    <!-- Player Table -->
     <div class="table-wrapper">
       <table>
-        <thead id="tableHead"></thead>
-        <tbody id="tableBody"></tbody>
+        <thead>
+          <tr>
+            <th data-sort="index">#</th>
+            <th data-sort="country">Country</th>
+            <th data-sort="username">Player</th>
+            <th data-sort="level">Level</th>
+            <th data-sort="xp">Xp</th>
+            <th data-sort="join_date">Join Date</th>
+            <th data-sort="last_online">Last Online</th>
+            <th data-sort="clan">Clan</th>
+          </tr>
+        </thead>
+        <tbody id="playerTableBody">
+          <tr><td colspan="8">Loading players...</td></tr>
+        </tbody>
       </table>
     </div>
+
   </main>
 </div>
 
-<!-- PLAYER MODAL -->
+<!-- Player Info Modal -->
 <div id="playerModal" class="modal">
   <div class="modal-content">
-    <span class="close" onclick="closeModal('playerModal')">&times;</span>
-    <h3 id="p_name"></h3>
-    <p>ID: <span id="p_id"></span></p>
-    <p>Country: <span id="p_country"></span></p>
-    <p>Level: <span id="p_level"></span></p>
-    <p>XP: <span id="p_xp"></span></p>
-    <p>Clan: <span id="p_clan"></span></p>
-    <p>Role: <span id="p_role"></span></p>
-    <p>Last Login: <span id="p_last"></span></p>
-  </div>
-</div>
-
-<!-- CLAN MODAL -->
-<div id="clanModal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeModal('clanModal')">&times;</span>
-    <h3 id="c_name"></h3>
-    <p>ID: <span id="c_id"></span></p>
-    <p>Tag: <span id="c_tag"></span></p>
-    <p>Level: <span id="c_level"></span></p>
-    <p>XP: <span id="c_xp"></span></p>
-    <p>Plays: <span id="c_plays"></span></p>
-    <p>Last Active: <span id="c_last"></span></p>
-    <p>Last Online: <span id="c_online"></span></p>
-    <p>Description: <span id="c_desc"></span></p>
-    <p>Leader: <span id="c_leader"></span></p>
+    <span class="close" id="modalClose">&times;</span>
+    <h3 id="modalNickname">Player Info</h3>
+    <p><strong>ID:</strong> <span id="modalId"></span></p>
+    <p><strong>Nickname:</strong> <span id="modalNick"></span></p>
+    <p><strong>Country:</strong> <span id="modalCountry"></span></p>
+    <p><strong>Level:</strong> <span id="modalLevel"></span></p>
+    <p><strong>XP (Honor Points):</strong> <span id="modalXp"></span></p>
+    <p><strong>Registration Date:</strong> <span id="modalReg"></span></p>
+    <p><strong>Last Login:</strong> <span id="modalLastLogin"></span></p>
+    <p><strong>Last Online:</strong> <span id="modalLastOnline"></span></p>
   </div>
 </div>
 
 <script>
-const PLAYERS_API = 'https://raw.githubusercontent.com/CleverDude1/Motor-Wars-2-Old-Portal/main/players.json';
-const CLANS_API = 'https://mw2-proxy-clans.vercel.app/api/clans';
+const API_URL = 'https://raw.githubusercontent.com/CleverDude1/Motor-Wars-2-Old-Portal/refs/heads/main/players.json';
 
-let mode = 'players';
-let data = [];
-let sortField = 'xp';
+let cachedPlayers = [];
+let showActiveOnly = false;
+let searchQuery = '';
+let sortField = 'level';
 let sortAsc = false;
-let showActive = false;
-let search = '';
 
-document.getElementById('btnPlayers').onclick = ()=>switchMode('players');
-document.getElementById('btnClans').onclick = ()=>switchMode('clans');
-document.getElementById('btnActivePlayers').onclick = ()=>{
-  showActive = !showActive;
-  render();
-};
-document.getElementById('btnSearch').onclick = ()=>{
-  search = document.getElementById('searchInput').value.toLowerCase();
-  render();
-};
+const btnAll = document.getElementById('btnAllPlayers');
+const btnActive = document.getElementById('btnActivePlayers');
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('btnSearchPlayer');
+const headers = document.querySelectorAll('th[data-sort]');
 
-function switchMode(m){
-  mode = m;
-  document.querySelectorAll('.side-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById(m==='players'?'btnPlayers':'btnClans').classList.add('active');
-  load();
+const modal = document.getElementById('playerModal');
+const modalClose = document.getElementById('modalClose');
+const modalId = document.getElementById('modalId');
+const modalNick = document.getElementById('modalNick');
+const modalNickname = document.getElementById('modalNickname');
+const modalCountry = document.getElementById('modalCountry');
+const modalLevel = document.getElementById('modalLevel');
+const modalXp = document.getElementById('modalXp');
+const modalReg = document.getElementById('modalReg');
+const modalLastLogin = document.getElementById('modalLastLogin');
+const modalLastOnline = document.getElementById('modalLastOnline');
+
+function xpToLevel(xp) {
+  return Math.max(1, Math.floor(Math.sqrt(Math.max(0, xp)/2500)));
 }
 
-async function load(){
-  const url = mode==='players'?PLAYERS_API:CLANS_API;
-  const res = await fetch(url);
-  data = await res.json();
-  render();
-}
+// Map player data for display
+function mapPlayerData(player) {
+  const p = player.current || {};
 
-function xpToLevel(xp){
-  return Math.max(1, Math.floor(Math.sqrt(xp/2500)));
-}
-
-function render(){
-  let filtered = [...data];
-
-  if(mode==='players'){
-    filtered = filtered.map(p=>{
-      const u = p.current||{};
-      return {
-        id: u.id,
-        name: u.nickname||'Unknown',
-        country: u.country,
-        xp: Number(u.xp)||0,
-        level: xpToLevel(u.xp||0),
-        clan: (u.nickname||'').match(/\((.*?)\)/)?.[1]||'-',
-        last: u.lastLogin
-      };
-    });
-
-    if(showActive){
-      const cutoff = Date.now()-30*86400000;
-      filtered = filtered.filter(p=>new Date(p.last)>=cutoff);
-    }
-
-    if(search){
-      filtered = filtered.filter(p=>p.name.toLowerCase().includes(search));
-    }
-
-    document.getElementById('tableHead').innerHTML=`
-      <tr>
-        <th data-sort="name">Name</th>
-        <th data-sort="xp">XP</th>
-        <th data-sort="level">Level</th>
-        <th data-sort="clan">Clan</th>
-      </tr>
-    `;
-
-  } else {
-    filtered = filtered.map(c=>({
-      id: c.id,
-      tag: c.clanTag,
-      name: c.clanName||'-',
-      xp: Number(c.honor)||0,
-      level: c.level,
-      plays: c.plays,
-      last: c.lastActive,
-      desc: c.clanDescription||''
-    }));
-
-    if(search){
-      filtered = filtered.filter(c=>c.tag.toLowerCase().includes(search));
-    }
-
-    document.getElementById('tableHead').innerHTML=`
-      <tr>
-        <th data-sort="tag">Tag</th>
-        <th data-sort="name">Name</th>
-        <th data-sort="xp">XP</th>
-        <th data-sort="plays">Plays</th>
-      </tr>
-    `;
+  let username = p.nickname || 'Unknown';
+  let clan = '-';
+  const match = username.match(/\(([^)]+)\)/);
+  if (match) {
+    clan = match[1];
+    username = username.replace(/\s*\([^)]+\)/, '');
   }
 
-  filtered.sort((a,b)=>{
-    let A=a[sortField], B=b[sortField];
-    if(typeof A==='string') return sortAsc?A.localeCompare(B):B.localeCompare(A);
-    return sortAsc?A-B:B-A;
-  });
+  return {
+    index: 0,
+    id: p.id || 'N/A',
+    country: p.country || 'N/A',
+    username,
+    xp: Number(p.xp) || 0,
+    level: xpToLevel(p.xp || 0),
+    join_date: p.timeJoined || 'N/A',
+    last_online: p.lastLogin || 'N/A',
+    clan
+  };
+}
 
-  const body = document.getElementById('tableBody');
-  body.innerHTML='';
+async function loadPlayers() {
+  try {
+    const response = await fetch(API_URL);
+    const playersData = await response.json();
+    cachedPlayers = playersData;
+    applyFilter();
+  } catch (err) {
+    console.error(err);
+    document.getElementById('playerTableBody').innerHTML = '<tr><td colspan="8">Failed to load player data.</td></tr>';
+  }
+}
 
-  filtered.forEach(item=>{
-    const tr=document.createElement('tr');
+function renderPlayers(players) {
+  players = players.map(mapPlayerData);
 
-    if(mode==='players'){
-      tr.innerHTML=`
-        <td>${item.name}</td>
-        <td>${item.xp}</td>
-        <td>${item.level}</td>
-        <td>${item.clan}</td>
-      `;
-      tr.onclick=()=>openPlayer(item);
-    } else {
-      tr.innerHTML=`
-        <td>${item.tag}</td>
-        <td>${item.name}</td>
-        <td>${item.xp}</td>
-        <td>${item.plays}</td>
-      `;
-      tr.onclick=()=>openClan(item);
+  players.sort((a,b)=>{
+    let A = a[sortField];
+    let B = b[sortField];
+
+    if(sortField==='join_date'||sortField==='last_online'){
+      A = A==='N/A'?0:new Date(A).getTime();
+      B = B==='N/A'?0:new Date(B).getTime();
     }
 
-    body.appendChild(tr);
+    if(typeof A==='string'){
+      return sortAsc ? A.localeCompare(B) : B.localeCompare(A);
+    }
+    return sortAsc ? A-B : B-A;
   });
 
-  document.querySelectorAll('th').forEach(th=>{
-    th.onclick=()=>{
-      const f=th.dataset.sort;
-      if(sortField===f) sortAsc=!sortAsc;
-      else { sortField=f; sortAsc=false; }
-      render();
-    };
+  const tbody = document.getElementById('playerTableBody');
+  tbody.innerHTML='';
+
+  if(players.length===0){
+    tbody.innerHTML='<tr><td colspan="8">No players found.</td></tr>';
+    return;
+  }
+
+  players.forEach((p,index)=>{
+    p.index=index+1;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${p.index}</td>
+      <td>${p.country}</td>
+      <td>${p.username}</td>
+      <td>${p.level}</td>
+      <td>${p.xp}</td>
+      <td>${p.join_date}</td>
+      <td>${p.last_online}</td>
+      <td>${p.clan}</td>
+    `;
+    tr.addEventListener('click',()=>showPlayerModal(p));
+    tbody.appendChild(tr);
   });
 }
 
-function openPlayer(p){
-  document.getElementById('p_name').textContent=p.name;
-  document.getElementById('p_id').textContent=p.id;
-  document.getElementById('p_country').textContent=p.country;
-  document.getElementById('p_level').textContent=p.level;
-  document.getElementById('p_xp').textContent=p.xp;
-  document.getElementById('p_clan').textContent=p.clan;
-  document.getElementById('p_role').textContent='';
-  document.getElementById('p_last').textContent=p.last;
-  document.getElementById('playerModal').style.display='block';
+function showPlayerModal(p){
+  modalId.textContent=p.id;
+  modalNick.textContent=p.username;
+  modalNickname.textContent=p.username;
+  modalCountry.textContent=p.country;
+  modalLevel.textContent=p.level;
+  modalXp.textContent=p.xp;
+  modalReg.textContent=p.join_date;
+  modalLastLogin.textContent=p.last_online;
+
+  if(p.last_online!=='N/A'){
+    const lastLoginDate=new Date(p.last_online);
+    const now=new Date();
+    const diffDays=Math.floor((now-lastLoginDate)/(1000*60*60*24));
+    modalLastOnline.textContent=`${diffDays} day(s) ago`;
+  } else modalLastOnline.textContent='N/A';
+
+  modal.style.display='block';
 }
 
-function openClan(c){
-  const diff=Math.floor((Date.now()-new Date(c.last))/(86400000));
-  document.getElementById('c_name').textContent=c.name;
-  document.getElementById('c_id').textContent=c.id;
-  document.getElementById('c_tag').textContent=c.tag;
-  document.getElementById('c_level').textContent=c.level;
-  document.getElementById('c_xp').textContent=c.xp;
-  document.getElementById('c_plays').textContent=c.plays;
-  document.getElementById('c_last').textContent=c.last;
-  document.getElementById('c_online').textContent=diff+' days ago';
-  document.getElementById('c_desc').textContent=c.desc;
-  document.getElementById('c_leader').textContent='';
-  document.getElementById('clanModal').style.display='block';
+modalClose.addEventListener('click',()=>modal.style.display='none');
+window.addEventListener('click',e=>{if(e.target===modal) modal.style.display='none';});
+
+function applyFilter(){
+  let filtered = [...cachedPlayers];
+
+  if(showActiveOnly){
+    const now=new Date();
+    const cutoff=new Date(now.getTime()-30*24*60*60*1000);
+    filtered = filtered.filter(p => {
+      const last = p.current?.lastLogin;
+      return last && new Date(last)>=cutoff;
+    });
+  }
+
+  if(searchQuery){
+    const q=searchQuery.toLowerCase();
+    filtered = filtered.filter(p => (p.current?.nickname||'').toLowerCase().startsWith(q));
+  }
+
+  renderPlayers(filtered);
 }
 
-function closeModal(id){
-  document.getElementById(id).style.display='none';
-}
+headers.forEach(th=>{
+  th.addEventListener('click',()=>{
+    const field=th.getAttribute('data-sort');
+    if(sortField===field) sortAsc=!sortAsc;
+    else { sortField=field; sortAsc=true; }
+    applyFilter();
+  });
+});
 
-load();
+btnAll.addEventListener('click',()=>{ showActiveOnly=false; applyFilter(); });
+btnActive.addEventListener('click',()=>{ showActiveOnly=true; applyFilter(); });
+searchBtn.addEventListener('click',()=>{ searchQuery=searchInput.value.trim(); applyFilter(); });
+searchInput.addEventListener('input',()=>{ searchQuery=searchInput.value.trim(); applyFilter(); });
+
+window.addEventListener('DOMContentLoaded',loadPlayers);
 </script>
 
 </body>
