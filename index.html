@@ -48,9 +48,7 @@
       cursor: pointer;
     }
 
-    tbody tr {
-      cursor: pointer;
-    }
+    tbody tr { cursor: pointer; }
   </style>
 </head>
 <body>
@@ -87,7 +85,7 @@
       <button class="search-btn" id="btnSearchPlayer">Search Player</button>
     </div>
 
-    <!-- PLAYER TABLE -->
+    <!-- PLAYERS -->
     <div class="table-wrapper" id="playersSection">
       <table>
         <thead>
@@ -108,22 +106,21 @@
       </table>
     </div>
 
-    <!-- CLANS TABLE -->
+    <!-- CLANS -->
     <div class="table-wrapper" id="clansSection" style="display:none;">
       <table>
         <thead>
           <tr>
-            <th>#</th>
-            <th>Clan Tag</th>
-            <th>Clan Name</th>
-            <th>Level</th>
-            <th>Honor</th>
-            <th>Members (plays)</th>
-            <th>Last Active</th>
+            <th data-sort-clan="index">#</th>
+            <th data-sort-clan="tag">Tag</th>
+            <th data-sort-clan="name">Name</th>
+            <th data-sort-clan="level">Level</th>
+            <th data-sort-clan="xp">XP</th>
+            <th data-sort-clan="plays">Plays</th>
           </tr>
         </thead>
         <tbody id="clansTableBody">
-          <tr><td colspan="7">Loading clans...</td></tr>
+          <tr><td colspan="6">Loading clans...</td></tr>
         </tbody>
       </table>
     </div>
@@ -131,16 +128,54 @@
   </main>
 </div>
 
+<!-- PLAYER MODAL -->
+<div id="playerModal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="modalClose">&times;</span>
+    <h3 id="modalNickname">Player Info</h3>
+    <p><strong>ID:</strong> <span id="modalId"></span></p>
+    <p><strong>Nickname:</strong> <span id="modalNick"></span></p>
+    <p><strong>Country:</strong> <span id="modalCountry"></span></p>
+    <p><strong>Level:</strong> <span id="modalLevel"></span></p>
+    <p><strong>XP:</strong> <span id="modalXp"></span></p>
+    <p><strong>Join Date:</strong> <span id="modalReg"></span></p>
+    <p><strong>Last Login:</strong> <span id="modalLastLogin"></span></p>
+    <p><strong>Last Online:</strong> <span id="modalLastOnline"></span></p>
+  </div>
+</div>
+
+<!-- CLAN MODAL -->
+<div id="clanModal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="clanModalClose">&times;</span>
+    <h3 id="clanNameTitle">Clan Info</h3>
+    <p><strong>Tag:</strong> <span id="clanTag"></span></p>
+    <p><strong>Name:</strong> <span id="clanName"></span></p>
+    <p><strong>Level:</strong> <span id="clanLevel"></span></p>
+    <p><strong>XP:</strong> <span id="clanXP"></span></p>
+    <p><strong>Plays:</strong> <span id="clanPlays"></span></p>
+    <p><strong>Description:</strong> <span id="clanDesc"></span></p>
+  </div>
+</div>
+
 <script>
 const API_URL = 'https://raw.githubusercontent.com/CleverDude1/Motor-Wars-2-Old-Portal/refs/heads/main/players.json';
-const CLANS_API = 'https://mw2-proxy-clans.vercel.app/api/clans';
+const CLAN_API = 'https://mw2-proxy-clans.vercel.app/api/clans';
 
 let cachedPlayers = [];
 let cachedClans = [];
+let clanSortField = 'xp';
+let clanSortAsc = false;
 
+const btnAll = document.getElementById('btnAllPlayers');
+const btnActive = document.getElementById('btnActivePlayers');
 const btnClans = document.getElementById('btnClans');
+
 const playersSection = document.getElementById('playersSection');
 const clansSection = document.getElementById('clansSection');
+
+const clanModal = document.getElementById('clanModal');
+const clanModalClose = document.getElementById('clanModalClose');
 
 function xpToLevel(xp) {
   return Math.max(1, Math.floor(Math.sqrt(Math.max(0, xp)/2500)));
@@ -148,96 +183,98 @@ function xpToLevel(xp) {
 
 function mapPlayerData(player) {
   const p = player.current || {};
-
-  let username = p.nickname || 'Unknown';
-  let clan = '-';
-
-  const match = username.match(/\(([^)]+)\)/);
-  if (match) {
-    clan = match[1];
-    username = username.replace(/\s*\([^)]+\)/, '');
-  }
-
   return {
     id: p.id || 'N/A',
     country: p.country || 'N/A',
-    username,
+    username: p.nickname || 'Unknown',
     xp: Number(p.xp) || 0,
     level: xpToLevel(p.xp || 0),
     join_date: p.timeJoined || 'N/A',
     last_online: p.lastLogin || 'N/A',
-    clan
+    clan: '-'
   };
 }
 
 async function loadPlayers() {
   const res = await fetch(API_URL);
-  const data = await res.json();
-  cachedPlayers = data;
-  renderPlayers(data);
+  cachedPlayers = await res.json();
+  renderPlayers(cachedPlayers);
 }
 
 function renderPlayers(players) {
   const tbody = document.getElementById('playerTableBody');
   tbody.innerHTML = '';
-
-  players.map(mapPlayerData).forEach((p, i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${i+1}</td>
-      <td>${p.country}</td>
-      <td>${p.username}</td>
-      <td>${p.level}</td>
-      <td>${p.xp}</td>
-      <td>${p.join_date}</td>
-      <td>${p.last_online}</td>
-      <td>${p.clan}</td>
-    `;
+  players.map(mapPlayerData).forEach((p,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i+1}</td><td>${p.country}</td><td>${p.username}</td><td>${p.level}</td><td>${p.xp}</td><td>${p.join_date}</td><td>${p.last_online}</td><td>${p.clan}</td>`;
     tbody.appendChild(tr);
   });
 }
 
-/* =========================
-   CLANS SECTION
-========================= */
-
-async function loadClans() {
-  const res = await fetch(CLANS_API);
-  const data = await res.json();
-  cachedClans = data;
-  renderClans(data);
+/* CLANS */
+async function loadClans(){
+  const res = await fetch(CLAN_API);
+  cachedClans = await res.json();
+  renderClans();
 }
 
-function renderClans(clans) {
+function renderClans(){
   const tbody = document.getElementById('clansTableBody');
-  tbody.innerHTML = '';
+  tbody.innerHTML='';
 
-  clans.forEach((c, i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
+  let clans=[...cachedClans];
+  clans.sort((a,b)=>{
+    let A=a[clanSortField];
+    let B=b[clanSortField];
+    return clanSortAsc ? A-B : B-A;
+  });
+
+  clans.forEach((c,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
       <td>${i+1}</td>
-      <td>${c.clanTag}</td>
-      <td>${c.clanName || '-'}</td>
+      <td>${c.tag}</td>
+      <td>${c.name}</td>
       <td>${c.level}</td>
       <td>${c.honor}</td>
       <td>${c.plays}</td>
-      <td>${c.lastActive}</td>
     `;
+    tr.onclick=()=>showClanModal(c);
     tbody.appendChild(tr);
   });
 }
 
-/* =========================
-   SWITCH TABS
-========================= */
+function showClanModal(c){
+  document.getElementById('clanTag').textContent=c.tag;
+  document.getElementById('clanName').textContent=c.name;
+  document.getElementById('clanLevel').textContent=c.level;
+  document.getElementById('clanXP').textContent=c.honor;
+  document.getElementById('clanPlays').textContent=c.plays;
+  document.getElementById('clanDesc').textContent=c.description || 'N/A';
+  clanModal.style.display='block';
+}
 
-btnClans.addEventListener('click', () => {
-  playersSection.style.display = 'none';
-  clansSection.style.display = 'block';
+clanModalClose.onclick=()=>clanModal.style.display='none';
+
+/* TAB SWITCH */
+btnClans.onclick=()=>{
+  playersSection.style.display='none';
+  clansSection.style.display='block';
+
+  btnClans.classList.add('active');
+  btnAll.classList.remove('active');
+  btnActive.classList.remove('active');
+
   loadClans();
-});
+};
 
-/* ========================= */
+btnAll.onclick=()=>{
+  playersSection.style.display='block';
+  clansSection.style.display='none';
+
+  btnAll.classList.add('active');
+  btnClans.classList.remove('active');
+};
 
 window.addEventListener('DOMContentLoaded', loadPlayers);
 </script>
