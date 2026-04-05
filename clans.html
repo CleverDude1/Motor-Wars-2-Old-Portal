@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Motor Wars 2 Original | Clans</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    th { cursor: pointer; }
+
+    /* Arrows for sorting */
+    th[data-sort]::after {
+      content: ' ⇅';
+      font-size: 0.7em;
+      color: #999;
+      margin-left: 4px;
+    }
+
+    /* Clan modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.8);
+      color: #e5e7eb;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    .modal-content {
+      background: linear-gradient(#14240e, #0f1f0b);
+      margin: 10% auto;
+      padding: 25px;
+      border-radius: 12px;
+      width: 400px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      position: relative;
+    }
+
+    .close {
+      position: absolute;
+      right: 15px;
+      top: 10px;
+      color: #84cc16;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .modal h3 {
+      margin-top: 0;
+      color: #84cc16;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .modal p {
+      margin: 5px 0;
+    }
+
+    tbody tr {
+      cursor: pointer;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h2>Motor Wars 2 Original</h2>
+
+    <div class="category">
+      <h3>Search & Analyze</h3>
+      <button class="side-btn" onclick="window.location.href='players.html'">Players</button>
+      <button class="side-btn" onclick="window.location.href='clans.html'">Clans</button>
+      <button class="side-btn sub" onclick="window.location.href='player_tracker.html'">Player Tracker</button>
+    </div>
+
+    <div class="category">
+      <h3>Scores & Ranking</h3>
+      <button class="side-btn" id="btnNostalgiaNight" onclick="window.location.href='nostalgia_night.html'">Nostalgia Night</button>
+    </div>
+
+    <div class="category">
+      <h3>Analytics</h3>
+      <button class="side-btn" id="btnStatistics" onclick="window.location.href='statistics.html'">Statistics</button>
+      <button class="side-btn" id="btnXpCalculator" onclick="window.location.href='xp_calculator.html'">XP Calculator</button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+
+    <!-- Search bar -->
+    <div class="top-bar">
+      <input type="text" id="searchInput" placeholder="Search for a clan..." />
+      <button class="search-btn" id="btnSearchClan">Search Clan</button>
+    </div>
+
+    <!-- Clan Table -->
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th data-sort="tag">Clan Tag</th>
+            <th data-sort="name">Clan Name</th>
+            <th data-sort="level">Level</th>
+            <th data-sort="honor">XP (Honor)</th>
+            <th data-sort="createdAt">Creation Date</th>
+            <th data-sort="lastActive">Last Online</th>
+          </tr>
+        </thead>
+        <tbody id="clanTableBody">
+          <tr><td colspan="6">Loading clans...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<!-- Clan Info Modal -->
+<div id="clanModal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="modalClose">&times;</span>
+    <h3 id="modalClanName">Clan Info</h3>
+    <p><strong>ID:</strong> <span id="modalId"></span></p>
+    <p><strong>Tag:</strong> <span id="modalTag"></span></p>
+    <p><strong>Name:</strong> <span id="modalName"></span></p>
+    <p><strong>Level:</strong> <span id="modalLevel"></span></p>
+    <p><strong>XP (Honor):</strong> <span id="modalXp"></span></p>
+    <p><strong>Creation Date:</strong> <span id="modalCreated"></span></p>
+    <p><strong>Last Active:</strong> <span id="modalLastActive"></span></p>
+    <p><strong>Last Online:</strong> <span id="modalLastOnline"></span></p>
+    <p><strong>Plays:</strong> <span id="modalPlays"></span></p>
+    <p><strong>Description:</strong> <span id="modalDescription"></span></p>
+  </div>
+</div>
+
+<script>
+const API_URL = 'https://mw2-proxy-clans.vercel.app/api/clans';
+
+let cachedClans = [];
+let searchQuery = '';
+let sortField = 'level';
+let sortAsc = false;
+
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('btnSearchClan');
+const headers = document.querySelectorAll('th[data-sort]');
+
+const modal = document.getElementById('clanModal');
+const modalClose = document.getElementById('modalClose');
+const modalId = document.getElementById('modalId');
+const modalTag = document.getElementById('modalTag');
+const modalName = document.getElementById('modalName');
+const modalClanName = document.getElementById('modalClanName');
+const modalLevel = document.getElementById('modalLevel');
+const modalXp = document.getElementById('modalXp');
+const modalCreated = document.getElementById('modalCreated');
+const modalLastActive = document.getElementById('modalLastActive');
+const modalLastOnline = document.getElementById('modalLastOnline');
+const modalPlays = document.getElementById('modalPlays');
+const modalDescription = document.getElementById('modalDescription');
+
+function daysAgo(dateStr) {
+  const last = new Date(dateStr);
+  const now = new Date();
+  const diffDays = Math.floor((now - last)/(1000*60*60*24));
+  return diffDays + ' day(s) ago';
+}
+
+async function loadClans() {
+  try {
+    const response = await fetch(API_URL);
+    const clansData = await response.json();
+    cachedClans = clansData;
+    applyFilter();
+  } catch(err) {
+    console.error(err);
+    document.getElementById('clanTableBody').innerHTML = '<tr><td colspan="6">Failed to load clan data.</td></tr>';
+  }
+}
+
+function renderClans(clans) {
+  const tbody = document.getElementById('clanTableBody');
+  tbody.innerHTML = '';
+
+  if(clans.length === 0){
+    tbody.innerHTML = '<tr><td colspan="6">No clans found.</td></tr>';
+    return;
+  }
+
+  clans.sort((a,b)=>{
+    let A = a[sortField];
+    let B = b[sortField];
+
+    if(sortField==='createdAt'||sortField==='lastActive'){
+      A = new Date(A).getTime();
+      B = new Date(B).getTime();
+    }
+
+    if(typeof A==='string'){
+      return sortAsc ? A.localeCompare(B) : B.localeCompare(A);
+    }
+    return sortAsc ? A-B : B-A;
+  });
+
+  clans.forEach(clan=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${clan.tag || '-'}</td>
+      <td>${clan.name || '-'}</td>
+      <td>${clan.level || 0}</td>
+      <td>${clan.honor || 0}</td>
+      <td>${clan.createdAt || '-'}</td>
+      <td>${clan.lastActive || '-'}</td>
+    `;
+    tr.addEventListener('click',()=>showClanModal(clan));
+    tbody.appendChild(tr);
+  });
+}
+
+function showClanModal(clan){
+  modalId.textContent = clan.id || 'N/A';
+  modalTag.textContent = clan.tag || 'N/A';
+  modalName.textContent = clan.name || '-';
+  modalClanName.textContent = clan.name || clan.tag || 'Clan Info';
+  modalLevel.textContent = clan.level || 'N/A';
+  modalXp.textContent = clan.honor || 0;
+  modalCreated.textContent = clan.createdAt || 'N/A';
+  modalLastActive.textContent = clan.lastActive || 'N/A';
+  modalLastOnline.textContent = clan.lastActive ? daysAgo(clan.lastActive) : 'N/A';
+  modalPlays.textContent = clan.plays || 0;
+  modalDescription.textContent = clan.description || '-';
+  modal.style.display = 'block';
+}
+
+modalClose.addEventListener('click',()=>modal.style.display='none');
+window.addEventListener('click',e=>{if(e.target===modal) modal.style.display='none';});
+
+function applyFilter(){
+  let filtered = [...cachedClans];
+
+  if(searchQuery){
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter(c => (c.tag||'').toLowerCase().startsWith(q) || (c.name||'').toLowerCase().startsWith(q));
+  }
+
+  renderClans(filtered);
+}
+
+headers.forEach(th=>{
+  th.addEventListener('click',()=>{
+    const field = th.getAttribute('data-sort');
+    if(sortField === field) sortAsc = !sortAsc;
+    else { sortField = field; sortAsc = false; } // default descending
+    applyFilter();
+  });
+});
+
+searchBtn.addEventListener('click',()=>{ searchQuery=searchInput.value.trim(); applyFilter(); });
+searchInput.addEventListener('input',()=>{ searchQuery=searchInput.value.trim(); applyFilter(); });
+
+window.addEventListener('DOMContentLoaded', loadClans);
+</script>
+
+</body>
+</html>
